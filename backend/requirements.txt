@@ -1,0 +1,5 @@
+# Dependencias del backend de Python
+# Agrega aquí tus dependencias, por ejemplo:
+flask
+numpy
+flask-cors

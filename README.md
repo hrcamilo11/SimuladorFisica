@@ -20,49 +20,7 @@ El proyecto se dividirá en dos componentes principales:
 ### Backend (Python)
 
 1. Navega al directorio `backend`:
-   ```bash
-   cd backend
-   ```
-2. Crea un entorno virtual (opcional pero recomendado):
-   ```bash
-   python -m venv venv
-   ```
-3. Activa el entorno virtual:
-   - Windows:
-     ```bash
-     .\venv\Scripts\activate
-     ```
-   - macOS/Linux:
-     ```bash
-     source venv/bin/activate
-     ```
-4. Instala las dependencias (se especificarán en `requirements.txt`):
-   ```bash
-   pip install -r requirements.txt
-   ```
-5. Ejecuta la aplicación:
-   ```bash
-   python main.py
-   ```
-
-### Frontend (Next.js)
-
-1. Navega al directorio `frontend`:
-   ```bash
-   cd frontend
-   ```
-2. Instala las dependencias:
-   ```bash
-   npm install
-   # o
-   yarn install
-   ```
-3. Ejecuta la aplicación de desarrollo:
-   ```bash
-   npm run dev
-   # o
-   yarn dev
-   ```
+   Para instrucciones detalladas sobre cómo configurar y ejecutar cada componente, consulta los archivos `README.md` dentro de los directorios `backend/` y `frontend/` respectivamente.
 
 ## Ejecutar Ambos Componentes
 
@@ -72,15 +30,24 @@ Para iniciar tanto el backend como el frontend simultáneamente, puedes usar el 
 start_all.bat
 ```
 
-## Casos de Simulación a Implementar
+## Simulaciones Disponibles
 
-- Caída Libre
-- Tiro Parabólico
-- Planos Inclinados
-- Colisiones (elásticas e inelásticas)
-- Otros (a definir)
+El simulador incluye las siguientes simulaciones físicas:
 
-Cada simulación permitirá:
-- Ingresar valores iniciales.
-- Mostrar las fórmulas físicas aplicadas.
-- Visualizar la simulación con animaciones.
+-   Caída Libre
+-   Tiro Parabólico
+-   Movimiento Rectilíneo Uniforme (MRU)
+-   Movimiento Rectilíneo Uniformemente Variado (MRUV)
+-   Colisión Elástica 1D, 2D y 3D
+-   Colisión Inelástica 1D, 2D y 3D
+-   Péndulo Simple
+-   Trabajo y Energía Cinética
+-   Energía Potencial Gravitatoria y Conservación de Energía Mecánica
+-   Energía Potencial Elástica y Conservación (Sistema Masa-Resorte)
+-   Fuerzas y Leyes de Newton (2da Ley)
+
+Cada simulación permite:
+
+-   Ingresar parámetros iniciales.
+-   Visualizar las fórmulas físicas aplicadas.
+-   Obtener resultados detallados de la simulación.
