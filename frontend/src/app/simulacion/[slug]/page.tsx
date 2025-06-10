@@ -1,8 +1,8 @@
-// frontend/src/app/simulacion/[slug]/page.tsx
 'use client';
 
 import Link from 'next/link';
-import { useState, use } from 'react';
+import { useState, useEffect, use } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -16,6 +16,29 @@ interface SimulationParams {
 interface SimulationResult {
   // Estructura de los resultados, puede variar por simulación
   [key: string]: any;
+  tiempos?: number[];
+  posiciones?: number[];
+  alturas?: number[];
+  velocidades?: number[];
+  posiciones_x?: number[];
+  posiciones_y?: number[];
+  angulos?: number[];
+  velocidades_x?: number[];
+  velocidades_y?: number[];
+  aceleraciones?: number[];
+  energias_potenciales?: number[];
+  energias_cineticas?: number[];
+  energias_totales?: number[];
+  posiciones_angular?: number[];
+  velocidades_angular?: number[];
+  aceleraciones_angular?: number[];
+  posiciones_x_cartesianas?: number[];
+  posiciones_y_cartesianas?: number[];
+}
+
+interface ChartDataPoint {
+  tiempo: number;
+  [key: string]: number;
 }
 
 interface SimulationData {
@@ -23,7 +46,9 @@ interface SimulationData {
   parametros_entrada: SimulationParams;
   formulas: string[];
   resultados: SimulationResult;
-  // Otros campos que pueda devolver tu API
+  mensaje?: string; // Add optional message field
+  error?: string; // Add optional error field
+  // Remove tipo_simulacion and formulas as they are not in the new backend response
 }
 
 interface ParamDefinition {
@@ -33,18 +58,139 @@ interface ParamDefinition {
 }
 
 interface SimulationPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 const SimulationPage = ({ params }: SimulationPageProps) => {
-  //@ts-ignore
   const { slug } = use(params);
   const [simulationData, setSimulationData] = useState<SimulationData | null>(null);
   const [inputParams, setInputParams] = useState<SimulationParams>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [graphData, setGraphData] = useState<ChartDataPoint[]>([]);
+
+  useEffect(() => {
+    if (simulationData && shouldDisplayChart(slug)) {
+      setGraphData(formatDataForChart(simulationData));
+    } else {
+      setGraphData([]);
+    }
+  }, [simulationData, slug]);
+
+  const isChartableSimulation = (simSlug: string): boolean => {
+    const chartableSimulations = [
+      'caida-libre',
+      'tiro-parabolico',
+      'plano-inclinado',
+      'movimiento-circular-uniforme',
+      'movimiento-armonico-simple',
+      'pendulo-simple',
+      'mru',
+      'mruv',
+      'fuerzas-leyes-newton',
+      'energia-potencial-conservacion',
+      'energia-potencial-elastica',
+    ];
+    return chartableSimulations.includes(simSlug);
+  };
+
+  const formatChartData = (resultados: SimulationResult, simSlug: string): ChartDataPoint[] => {
+    const tiempos = resultados.tiempos || [];
+    let data: ChartDataPoint[] = [];
+
+    switch (simSlug) {
+      case 'caida-libre':
+        data = tiempos.map((t, i) => ({
+          tiempo: t,
+          altura: resultados.alturas?.[i] || 0,
+          velocidad: resultados.velocidades?.[i] || 0,
+        }));
+        break;
+      case 'tiro-parabolico':
+        data = tiempos.map((t, i) => ({
+          tiempo: t,
+          posicion_x: resultados.posiciones_x?.[i] || 0,
+          posicion_y: resultados.posiciones_y?.[i] || 0,
+        }));
+        break;
+      case 'plano-inclinado':
+        data = tiempos.map((t, i) => ({
+          tiempo: t,
+          posicion: resultados.posiciones?.[i] || 0,
+          velocidad: resultados.velocidades?.[i] || 0,
+        }));
+        break;
+      case 'movimiento-circular-uniforme':
+        data = tiempos.map((t, i) => ({
+          tiempo: t,
+          posicion_x: resultados.posiciones_x?.[i] || 0,
+          posicion_y: resultados.posiciones_y?.[i] || 0,
+          angulo: resultados.angulos?.[i] || 0,
+        }));
+        break;
+      case 'movimiento-armonico-simple':
+        data = tiempos.map((t, i) => ({
+          tiempo: t,
+          posicion: resultados.posiciones?.[i] || 0,
+          velocidad: resultados.velocidades?.[i] || 0,
+          aceleracion: resultados.aceleraciones?.[i] || 0,
+        }));
+        break;
+      case 'pendulo-simple':
+        data = tiempos.map((t, i) => ({
+          tiempo: t,
+          posicion_angular: resultados.posiciones_angular?.[i] || 0,
+          velocidad_angular: resultados.velocidades_angular?.[i] || 0,
+          aceleracion_angular: resultados.aceleraciones_angular?.[i] || 0,
+          posicion_x_cartesiana: resultados.posiciones_x_cartesianas?.[i] || 0,
+          posicion_y_cartesiana: resultados.posiciones_y_cartesianas?.[i] || 0,
+        }));
+        break;
+      case 'mru':
+        data = tiempos.map((t, i) => ({
+          tiempo: t,
+          posicion: resultados.posiciones?.[i] || 0,
+        }));
+        break;
+      case 'mruv':
+        data = tiempos.map((t, i) => ({
+          tiempo: t,
+          posicion: resultados.posiciones?.[i] || 0,
+          velocidad: resultados.velocidades?.[i] || 0,
+        }));
+        break;
+      case 'fuerzas-leyes-newton':
+        data = tiempos.map((t, i) => ({
+          tiempo: t,
+          posicion: resultados.posiciones?.[i] || 0,
+          velocidad: resultados.velocidades?.[i] || 0,
+        }));
+        break;
+      case 'energia-potencial-conservacion':
+        data = tiempos.map((t, i) => ({
+          tiempo: t,
+          altura: resultados.alturas?.[i] || 0,
+          energia_potencial: resultados.energias_potenciales?.[i] || 0,
+          energia_cinetica: resultados.energias_cineticas?.[i] || 0,
+          energia_total: resultados.energias_totales?.[i] || 0,
+        }));
+        break;
+      case 'energia-potencial-elastica':
+        data = tiempos.map((t, i) => ({
+          tiempo: t,
+          posicion: resultados.posiciones?.[i] || 0,
+          energia_potencial_elastica: resultados.energias_potenciales_elasticas?.[i] || 0,
+          energia_cinetica: resultados.energias_cineticas?.[i] || 0,
+          energia_total: resultados.energias_totales?.[i] || 0,
+        }));
+        break;
+      default:
+        break;
+    }
+    return data;
+  };
 
   const getExpectedParamsForSimulation = (simSlug: string): ParamDefinition[] => {
     const timeDependentSimsDefault: ParamDefinition[] = [{ name: 'tiempo_total_s', label: 'Tiempo Total', unit: 's' }];
@@ -58,7 +204,7 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
           { name: 'velocidad_inicial', label: 'Velocidad Inicial', unit: 'm/s' },
           { name: 'angulo_lanzamiento_grados', label: 'Ángulo de Lanzamiento', unit: '°' },
           { name: 'altura_inicial', label: 'Altura Inicial', unit: 'm' },
-          
+
         ];
       case 'plano-inclinado':
         return [
@@ -156,25 +302,143 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
         ];
       case 'trabajo-energia':
         return [
-          { name: 'masa_kg', label: 'Masa', unit: 'kg' },
-          { name: 'fuerza_N', label: 'Fuerza', unit: 'N' },
-          { name: 'distancia_m', label: 'Distancia', unit: 'm' },
-          { name: 'velocidad_inicial_mps', label: 'Velocidad Inicial', unit: 'm/s' },
-          { name: 'angulo_fuerza_desplazamiento_grados', label: 'Ángulo Fuerza-Desplazamiento', unit: '°' },
+          { name: 'masa', label: 'Masa', unit: 'kg' },
+          { name: 'velocidad_inicial', label: 'Velocidad Inicial', unit: 'm/s' },
+          { name: 'fuerza', label: 'Fuerza', unit: 'N' },
+          { name: 'distancia', label: 'Distancia', unit: 'm' },
+          { name: 'angulo', label: 'Ángulo', unit: '°' },
+          ...timeDependentSimsDefault,
         ];
-      case 'energia-potencial-conservacion':
+      case 'energia-potencial-gravitatoria':
         return [
-          { name: 'masa_kg', label: 'Masa', unit: 'kg' },
-          { name: 'altura_inicial_m', label: 'Altura Inicial', unit: 'm' },
-          { name: 'velocidad_inicial_y_mps', label: 'Velocidad Inicial Y', unit: 'm/s' },
+          { name: 'masa', label: 'Masa', unit: 'kg' },
+          { name: 'altura', label: 'Altura', unit: 'm' },
+          ...timeDependentSimsDefault,
         ];
       case 'energia-potencial-elastica':
         return [
-          { name: 'masa_kg', label: 'Masa', unit: 'kg' },
-          { name: 'constante_elastica_Npm', label: 'Constante Elástica', unit: 'N/m' },
-          { name: 'amplitud_m', label: 'Amplitud', unit: 'm' },
-          { name: 'tiempo_total_s', label: 'Tiempo Total', unit: 's' },
-          { name: 'fase_inicial_grados', label: 'Fase Inicial', unit: '°' },
+          { name: 'constante_elastica', label: 'Constante Elástica', unit: 'N/m' },
+          { name: 'desplazamiento', label: 'Desplazamiento', unit: 'm' },
+          ...timeDependentSimsDefault,
+        ];
+      case 'ley-ohm':
+        return [
+          { name: 'voltaje', label: 'Voltaje', unit: 'V' },
+          { name: 'corriente', label: 'Corriente', unit: 'A' },
+          { name: 'resistencia', label: 'Resistencia', unit: 'Ω' },
+        ];
+      case 'potencia-ohm':
+        return [
+          { name: 'voltaje', label: 'Voltaje', unit: 'V' },
+          { name: 'corriente', label: 'Corriente', unit: 'A' },
+          { name: 'resistencia', label: 'Resistencia', unit: 'Ω' },
+        ];
+      case 'resistencia-circuito':
+        return [
+          { name: 'resistencias', label: 'Resistencias (separadas por comas)', unit: 'Ω' },
+          { name: 'tipo_circuito', label: 'Tipo de Circuito (serie/paralelo)' },
+        ];
+      case 'ley-kirchhoff-voltaje':
+        return [
+          { name: 'voltajes', label: 'Voltajes (separados por comas)', unit: 'V' },
+        ];
+      case 'ley-kirchhoff-corriente':
+        return [
+          { name: 'corrientes_entrantes', label: 'Corrientes Entrantes (separadas por comas)', unit: 'A' },
+          { name: 'corrientes_salientes', label: 'Corrientes Salientes (separadas por comas)', unit: 'A' },
+        ];
+      case 'campo-magnetico':
+        return [
+          { name: 'corriente', label: 'Corriente', unit: 'A' },
+          { name: 'distancia', label: 'Distancia', unit: 'm' },
+        ];
+      case 'fuerza-lorentz':
+        return [
+          { name: 'carga', label: 'Carga', unit: 'C' },
+          { name: 'velocidad', label: 'Velocidad', unit: 'm/s' },
+          { name: 'campo_magnetico', label: 'Campo Magnético', unit: 'T' },
+          { name: 'angulo', label: 'Ángulo', unit: '°' },
+        ];
+      case 'flujo-magnetico':
+        return [
+          { name: 'campo_magnetico', label: 'Campo Magnético', unit: 'T' },
+          { name: 'area', label: 'Área', unit: 'm²' },
+          { name: 'angulo', label: 'Ángulo', unit: '°' },
+        ];
+      case 'ley-faraday':
+        return [
+          { name: 'cambio_flujo_magnetico', label: 'Cambio de Flujo Magnético', unit: 'Wb' },
+          { name: 'cambio_tiempo', label: 'Cambio de Tiempo', unit: 's' },
+        ];
+      case 'capacitancia':
+        return [
+          { name: 'carga', label: 'Carga', unit: 'C' },
+          { name: 'voltaje', label: 'Voltaje', unit: 'V' },
+        ];
+      case 'carga-voltaje-capacitor':
+        return [
+          { name: 'capacitancia', label: 'Capacitancia', unit: 'F' },
+          { name: 'voltaje', label: 'Voltaje', unit: 'V' },
+          { name: 'carga', label: 'Carga', unit: 'C' },
+        ];
+      case 'circuitos-serie-paralelo':
+        return [
+          { name: 'componentes', label: 'Valores de Componentes (separados por comas)' },
+          { name: 'tipo', label: 'Tipo de Componente (resistencias/capacitores/inductores)' },
+          { name: 'conexion', label: 'Tipo de Conexión (serie/paralelo)' },
+        ];
+      case 'corriente-voltaje-total':
+        return [
+          { name: 'corrientes', label: 'Corrientes (separadas por comas)', unit: 'A' },
+          { name: 'voltajes', label: 'Voltajes (separadas por comas)', unit: 'V' },
+          { name: 'tipo', label: 'Tipo (corriente/voltaje)' },
+        ];
+      case 'divisor-voltaje':
+        return [
+          { name: 'voltaje_total', label: 'Voltaje Total', unit: 'V' },
+          { name: 'resistencias', label: 'Resistencias (separadas por comas)', unit: 'Ω' },
+          { name: 'resistencia_objetivo', label: 'Resistencia Objetivo', unit: 'Ω' },
+        ];
+      case 'energia-potencia-electrica':
+        return [
+          { name: 'voltaje', label: 'Voltaje', unit: 'V' },
+          { name: 'corriente', label: 'Corriente', unit: 'A' },
+          { name: 'tiempo', label: 'Tiempo', unit: 's' },
+        ];
+      case 'caida-voltaje':
+        return [
+          { name: 'corriente', label: 'Corriente', unit: 'A' },
+          { name: 'resistencia', label: 'Resistencia', unit: 'Ω' },
+        ];
+      case 'eficiencia-electrica':
+        return [
+          { name: 'potencia_salida', label: 'Potencia de Salida', unit: 'W' },
+          { name: 'potencia_entrada', label: 'Potencia de Entrada', unit: 'W' },
+        ];
+      case 'inductancia':
+        return [
+          { name: 'flujo_magnetico', label: 'Flujo Magnético', unit: 'Wb' },
+          { name: 'corriente', label: 'Corriente', unit: 'A' },
+        ];
+      case 'energia-inductor':
+        return [
+          { name: 'inductancia', label: 'Inductancia', unit: 'H' },
+          { name: 'corriente', label: 'Corriente', unit: 'A' },
+        ];
+      case 'longitud-onda':
+        return [
+          { name: 'velocidad', label: 'Velocidad', unit: 'm/s' },
+          { name: 'frecuencia', label: 'Frecuencia', unit: 'Hz' },
+        ];
+      case 'frecuencia-onda':
+        return [
+          { name: 'velocidad', label: 'Velocidad', unit: 'm/s' },
+          { name: 'longitud_onda', label: 'Longitud de Onda', unit: 'm' },
+        ];
+      case 'velocidad-onda':
+        return [
+          { name: 'frecuencia', label: 'Frecuencia', unit: 'Hz' },
+          { name: 'longitud_onda', label: 'Longitud de Onda', unit: 'm' },
         ];
       default:
         console.warn(`Parámetros no definidos para la simulación: ${simSlug}. Usando parámetros por defecto.`);
@@ -185,42 +449,106 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
     }
   };
 
-   const getOptionalParamsForSimulation = (simSlug: string): string[] => {
-     switch (simSlug) {
-       case 'tiro-parabolico':
-         return ['altura_inicial'];
-       case 'plano-inclinado':
-         return ['coeficiente_friccion', 'masa_kg'];
-       default:
-         return [];
-     }
-   };
+  const getOptionalParamsForSimulation = (simSlug: string): string[] => {
+    switch (simSlug) {
+      case 'tiro-parabolico':
+        return ['altura_inicial'];
+      case 'plano-inclinado':
+        return ['coeficiente_friccion', 'masa_kg'];
+      case 'ley-ohm':
+      case 'potencia-ohm':
+        return ['voltaje', 'corriente', 'resistencia']; // Permite 2 de 3
+      case 'resistencia-circuito':
+        return ['tipo_circuito'];
+      case 'ley-kirchhoff-voltaje':
+        return ['voltajes'];
+      case 'ley-kirchhoff-corriente':
+        return ['corrientes_entrantes', 'corrientes_salientes'];
+      case 'campo-magnetico':
+        return ['corriente', 'distancia'];
+      case 'fuerza-lorentz':
+        return ['angulo'];
+      case 'flujo-magnetico':
+        return ['angulo'];
+      case 'carga-voltaje-capacitor':
+        return ['voltaje', 'carga']; // Permite 2 de 3
+      case 'circuitos-serie-paralelo':
+        return ['tipo', 'conexion'];
+      case 'corriente-voltaje-total':
+        return ['tipo'];
+      case 'divisor-voltaje':
+        return ['resistencia_objetivo'];
+      case 'energia-potencia-electrica':
+        return ['tiempo'];
+      case 'longitud-onda':
+      case 'frecuencia-onda':
+      case 'velocidad-onda':
+        return ['velocidad', 'frecuencia', 'longitud_onda']; // Permite 2 de 3
+      default:
+        return [];
+    }
+  };
 
+  const shouldDisplayChart = (simSlug: string): boolean => {
+    const chartSims = [
+      'caida-libre',
+      'tiro-parabolico',
+      'movimiento-circular-uniforme',
+      'movimiento-armonico-simple',
+      'pendulo-simple',
+      'mru',
+      'mruv',
+      'fuerzas-leyes-newton',
+      'trabajo-energia',
+      'energia-potencial-conservacion',
+      'energia-potencial-elastica',
+    ];
+    return chartSims.includes(simSlug);
+  };
 
+  const formatDataForChart = (data: SimulationData): any[] => {
+    if (!data || !data.resultados || !Array.isArray(data.resultados)) {
+      return [];
+    }
+
+    // Asumiendo que cada objeto en el array de resultados tiene una clave 'tiempo'
+    // y otras claves numéricas para los valores a graficar.
+    return data.resultados.map(item => {
+      const formattedItem: any = { tiempo: item.tiempo };
+      for (const key in item) {
+        if (key !== 'tiempo' && typeof item[key] === 'number') {
+          formattedItem[key] = item[key];
+        }
+      }
+      return formattedItem;
+    });
+  };
+
+  const chartData = simulationData ? formatDataForChart(simulationData) : [];
 
   const handleInputChange = (name: string, value: string) => {
-     setInputParams(prev => ({
-       ...prev,
-       [name]: value === '' ? undefined : parseFloat(value),
-     }));
-   };
+    setInputParams(prev => ({
+      ...prev,
+      [name]: value === '' ? undefined : parseFloat(value),
+    }));
+  };
 
-   const handleSimulate = async () => {
-     setIsLoading(true);
-     setError(null);
-     setSimulationData(null);
+  const handleSimulate = async () => {
+    setIsLoading(true);
+    setError(null);
+    setSimulationData(null);
 
-     // Filtrar parámetros vacíos o indefinidos antes de enviar
-     const paramsToSend: SimulationParams = {};
-     for (const key in inputParams) {
-       if (inputParams[key] !== '' && inputParams[key] !== undefined) {
-         paramsToSend[key] = inputParams[key];
-       }
-     }
+    // Filtrar parámetros vacíos o indefinidos antes de enviar
+    const paramsToSend: SimulationParams = {};
+    for (const key in inputParams) {
+      if (inputParams[key] !== '' && inputParams[key] !== undefined) {
+        paramsToSend[key] = inputParams[key];
+      }
+    }
 
-     try {
-       const response = await fetch(`http://localhost:5001/simulacion/${slug}`,
-         {
+    try {
+      const response = await fetch(`http://localhost:5000/simulacion/${slug}`,
+        {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -287,11 +615,42 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
         {simulationData && (
           <div className="mt-8 w-full max-w-md text-left">
             <h2 className="text-2xl font-bold mb-4 text-center text-gray-600 dark:text-gray-300">Resultados</h2>
-            {Object.entries(simulationData.resultados).map(([key, value]) => (
-              <p key={key} className="mb-2 text-foreground">
-                <strong className="text-primary">{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:</strong> {JSON.stringify(value)}
-              </p>
-            ))}
+            {shouldDisplayChart(slug) && chartData.length > 0 ? (
+              <div className="w-full h-[400px] mt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={chartData}
+                    margin={{
+                      top: 5,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="tiempo" label={{ value: 'Tiempo (s)', position: 'insideBottom', offset: -5 }} />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    {Object.keys(chartData[0] || {}).filter(key => key !== 'tiempo').map((dataKey, index) => (
+                      <Line
+                        key={dataKey}
+                        type="monotone"
+                        dataKey={dataKey}
+                        stroke={`hsl(${index * 60}, 70%, 50%)`}
+                        activeDot={{ r: 8 }}
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              Object.entries(simulationData.resultados).map(([key, value]) => (
+                <p key={key} className="mb-2 text-foreground">
+                  <strong className="text-primary">{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:</strong> {JSON.stringify(value)}
+                </p>
+              ))
+            )}
 
             {/* Formulas Section */}
             {simulationData.formulas && simulationData.formulas.length > 0 && (
@@ -322,7 +681,7 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
         <a href="https://github.com/hrcamilo11" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors duration-200">
           <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 inline-block align-middle mr-2">
             <title>GitHub</title>
-            <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.73.084-.73 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.49.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12z"/>
+            <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.73.084-.73 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.49.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12z" />
           </svg>
           hrcamilo11
         </a>

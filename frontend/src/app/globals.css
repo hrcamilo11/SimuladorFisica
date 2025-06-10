@@ -54,7 +54,7 @@
   --primary: oklch(0.452 0.198 265.1); /* Azul para modo claro */
   --primary-foreground: oklch(1 0 0); /* Blanco para texto en modo claro */
   --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0 0 0);
+  --secondary-foreground: oklch(255 255 255);
   --muted: oklch(0.968 0.007 247.896);
   --muted-foreground: oklch(0.554 0.046 257.417);
   --accent: oklch(0.968 0.007 247.896);

@@ -5,37 +5,40 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 interface Simulation {
-  nombre: string;
-  descripcion: string;
+  name: string;
   endpoint: string;
 }
 
+interface SimulationCategory {
+  category: string;
+  simulations: Simulation[];
+}
+
 interface SimulationsData {
-  simulaciones_disponibles: Simulation[];
+  message: string;
+  available_simulations: SimulationCategory[];
 }
 
 async function getSimulations(): Promise<SimulationsData> {
-  // Asegúrate de que el backend esté corriendo en localhost:5001
-  const res = await fetch('http://localhost:5001/');
+  const res = await fetch('http://localhost:5000/');
   if (!res.ok) {
-    // Esto activará el Error Boundary más cercano
     throw new Error('Failed to fetch simulations');
   }
   return res.json();
 }
 
 export default function Home() {
-  const [simulations, setSimulations] = useState<Simulation[]>([]);
+  const [simulationCategories, setSimulationCategories] = useState<SimulationCategory[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     getSimulations()
       .then(data => {
-        setSimulations(data.simulaciones_disponibles);
+        setSimulationCategories(data.available_simulations);
       })
       .catch(err => {
         console.error(err);
-        setError('No se pudo cargar la lista de simulaciones. Asegúrate de que el servidor backend esté en ejecución en http://localhost:5001.');
+        setError('No se pudo cargar la lista de simulaciones. Asegúrate de que el servidor backend esté en ejecución en http://localhost:5000.');
       });
   }, []);
 
@@ -56,17 +59,23 @@ export default function Home() {
 
         <h2 className="text-2xl font-semibold mb-6">Simulaciones Disponibles:</h2>
         
-        {simulations.length > 0 ? (
-          <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {simulations.map((sim, index) => (
-              <li key={sim.endpoint || sim.nombre || index} className="bg-card text-card-foreground shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 ease-in-out">
-                <Link href={`/simulacion${sim.endpoint ? sim.endpoint.replace('/simulacion', '') : ''}`} className="block p-6">
-                  <h3 className="text-xl font-semibold text-primary hover:text-primary-foreground mb-2">{sim.nombre}</h3>
-                  <p className="text-muted-foreground text-sm">{sim.descripcion}</p>
-                </Link>
-              </li>
+        {simulationCategories.length > 0 ? (
+          <div className="space-y-8">
+            {simulationCategories.map((categoryData, categoryIndex) => (
+              <div key={categoryIndex}>
+                <h3 className="text-2xl font-bold text-primary mb-4">{categoryData.category}</h3>
+                <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {categoryData.simulations.map((sim, simIndex) => (
+                    <li key={sim.endpoint || sim.name || simIndex} className="bg-card text-card-foreground shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 ease-in-out">
+                      <Link href={sim.endpoint} className="block p-6">
+                        <h4 className="text-xl font-semibold text-primary hover:text-primary-foreground mb-2">{sim.name}</h4>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         ) : (
           !error && <p className="text-muted-foreground">Cargando simulaciones...</p>
         )}
