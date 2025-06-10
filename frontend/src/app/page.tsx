@@ -68,7 +68,7 @@ export default function Home() {
                   {categoryData.simulations.map((sim, simIndex) => (
                     <li key={sim.endpoint || sim.name || simIndex} className="bg-card text-card-foreground shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 ease-in-out">
                       <Link href={sim.endpoint} className="block p-6">
-                        <h4 className="text-xl font-semibold text-primary hover:text-primary-foreground mb-2">{sim.name}</h4>
+                        <h4 className="text-xl font-semibold text-primary hover:text-black mb-2">{sim.name}</h4>
                       </Link>
                     </li>
                   ))}
