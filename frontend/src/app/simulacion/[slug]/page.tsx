@@ -76,6 +76,10 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
   const animationTimeline = useRef<gsap.core.Timeline | null>(null);
   const circleRef = useRef<SVGCircleElement>(null);
   const timeTextRef = useRef<SVGTextElement>(null);
+  const xAxisRef = useRef<SVGLineElement>(null);
+  const yAxisRef = useRef<SVGLineElement>(null);
+  const xAxisLabelRef = useRef<SVGTextElement>(null);
+  const yAxisLabelRef = useRef<SVGTextElement>(null);
 
   useEffect(() => {
     if (simulationData && shouldDisplayChart(slug)) {
@@ -209,72 +213,17 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
 
             // Update time display
             if (timeTextRef.current) {
-              let displayText = `Tiempo: ${currentEstado.tiempo.toFixed(2)} s\n`;
-
-              if (currentEstado.posicion?.x !== undefined) {
-                displayText += `X: ${currentEstado.posicion.x.toFixed(2)} m\n`;
-              }
-              if (currentEstado.posicion?.y !== undefined) {
-                displayText += `Y: ${currentEstado.posicion.y.toFixed(2)} m\n`;
-              }
-              if (currentEstado.velocidad?.x !== undefined) {
-                displayText += `Vx: ${currentEstado.velocidad.x.toFixed(2)} m/s\n`;
-              }
-              if (currentEstado.velocidad?.y !== undefined) {
-                displayText += `Vy: ${currentEstado.velocidad.y.toFixed(2)} m/s\n`;
-              }
-              if (currentEstado.aceleracion?.x !== undefined) {
-                displayText += `Ax: ${currentEstado.aceleracion.x.toFixed(2)} m/s²\n`;
-              }
-              if (currentEstado.aceleracion?.y !== undefined) {
-                displayText += `Ay: ${currentEstado.aceleracion.y.toFixed(2)} m/s²\n`;
-              }
-
-              if (currentEstado.fuerza !== undefined) {
-                displayText += `Fuerza: ${currentEstado.fuerza.toFixed(2)} N\n`;
-              }
-              if (currentEstado.tension !== undefined) {
-                displayText += `Tensión: ${currentEstado.tension.toFixed(2)} N\n`;
-              }
-              if (currentEstado.energia_potencial !== undefined) {
-                displayText += `Energía Potencial: ${currentEstado.energia_potencial.toFixed(2)} J\n`;
-              }
-              if (currentEstado.energia_cinetica !== undefined) {
-                displayText += `Energía Cinética: ${currentEstado.energia_cinetica.toFixed(2)} J\n`;
-              }
-              if (currentEstado.energia_total !== undefined) {
-                displayText += `Energía Total: ${currentEstado.energia_total.toFixed(2)} J\n`;
-              }
-              if (currentEstado.posicion_angular !== undefined) {
-                displayText += `Posición Angular: ${currentEstado.posicion_angular.toFixed(2)} rad\n`;
-              }
-              if (currentEstado.velocidad_angular !== undefined) {
-                displayText += `Velocidad Angular: ${currentEstado.velocidad_angular.toFixed(2)} rad/s\n`;
-              }
-              if (currentEstado.aceleracion_angular !== undefined) {
-                displayText += `Aceleración Angular: ${currentEstado.aceleracion_angular.toFixed(2)} rad/s²\n`;
-              }
-              if (currentEstado.voltaje_capacitor) {
-                displayText += `Voltaje Capacitor: ${currentEstado.voltaje_capacitor.toFixed(2)} V\n`;
-              }
-              if (currentEstado.corriente) {
-                displayText += `Corriente: ${currentEstado.corriente.toFixed(2)} A\n`;
-              }
-              if (currentEstado.amplitud) {
-                displayText += `Amplitud: ${currentEstado.amplitud.toFixed(2)} m\n`;
-              }
-              if (currentEstado.desplazamiento) {
-                displayText += `Desplazamiento: ${currentEstado.desplazamiento.toFixed(2)} m\n`;
-              }
-              timeTextRef.current.textContent = displayText;
+              let displayText = `Tiempo: ${currentEstado.tiempo.toFixed(4)} s\n`;
+            timeTextRef.current.textContent = displayText;
 
               // To make multiline text work in SVG, we need to create tspan elements
               const lines = timeTextRef.current.textContent.split('\n');
               timeTextRef.current.innerHTML = ''; // Clear existing content
               lines.forEach((line, index) => {
                 const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-                tspan.setAttribute('x', '2');
-                tspan.setAttribute('dy', index === 0 ? '0' : '1.2em'); // Adjust line spacing
+                tspan.setAttribute('x', '50');
+                tspan.setAttribute('y', '95');
+                 // Adjust line spacing
                 tspan.textContent = line;
                 timeTextRef.current?.appendChild(tspan);
               });
@@ -295,6 +244,66 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
         animationTimeline.current = null;
       }
     };
+  }, [simulationData, slug]);
+
+  useEffect(() => {
+    if (simulationData && simulationData.resultados.estados_simulacion && simulationData.resultados.estados_simulacion.length > 0) {
+      const estados = simulationData.resultados.estados_simulacion;
+      const initialEstado = estados[0];
+
+      let initialX = 0;
+      let initialY = 0;
+
+      switch (slug) {
+        case 'caida-libre':
+        case 'movimiento-vertical':
+          initialY = initialEstado.altura !== undefined ? initialEstado.altura : 0;
+          break;
+        case 'movimiento-horizontal':
+          initialX = initialEstado.posicion !== undefined ? initialEstado.posicion : 0;
+          break;
+        case 'tiro-parabolico':
+        case 'movimiento-circular-uniforme':
+        case 'pendulo-simple':
+          initialX = initialEstado.posicion_x !== undefined ? initialEstado.posicion_x : 0;
+          initialY = initialEstado.posicion_y !== undefined ? initialEstado.posicion_y : 0;
+          break;
+      }
+
+      const minX = Math.min(...estados.map(e => e.posicion_x !== undefined ? e.posicion_x : (e.posicion !== undefined ? e.posicion : 0)), initialX);
+      const maxX = Math.max(...estados.map(e => e.posicion_x !== undefined ? e.posicion_x : (e.posicion !== undefined ? e.posicion : 0)), initialX);
+      const minY = Math.min(...estados.map(e => e.posicion_y !== undefined ? e.posicion_y : (e.altura !== undefined ? e.altura : 0)), initialY);
+      const maxY = Math.max(...estados.map(e => e.posicion_y !== undefined ? e.posicion_y : (e.altura !== undefined ? e.altura : 0)), initialY);
+
+      const padding = 10; // Padding for the axes
+      const viewBoxWidth = 100;
+      const viewBoxHeight = 100;
+
+      const scaleX = (viewBoxWidth - 2 * padding) / (maxX - minX || 1);
+      const offsetX = padding - minX * scaleX;
+      const scaleY = (viewBoxHeight - 2 * padding) / (maxY - minY || 1);
+      const offsetY = padding - minY * scaleY;
+
+      // Position X-axis
+      if (xAxisRef.current) {
+        const yAxisPosition = viewBoxHeight - (initialY * scaleY + offsetY);
+        gsap.set(xAxisRef.current, { attr: { y1: yAxisPosition, y2: yAxisPosition } });
+      }
+      if (xAxisLabelRef.current) {
+        const yAxisPosition = viewBoxHeight - (initialY * scaleY + offsetY);
+        gsap.set(xAxisLabelRef.current, { attr: { y: yAxisPosition + 2 } }); // Offset label slightly
+      }
+
+      // Position Y-axis
+      if (yAxisRef.current) {
+        const xAxisPosition = initialX * scaleX + offsetX;
+        gsap.set(yAxisRef.current, { attr: { x1: xAxisPosition, x2: xAxisPosition } });
+      }
+      if (yAxisLabelRef.current) {
+        const xAxisPosition = initialX * scaleX + offsetX;
+        gsap.set(yAxisLabelRef.current, { attr: { x: xAxisPosition - 2 } }); // Offset label slightly
+      }
+    }
   }, [simulationData, slug]);
 
   useEffect(() => {
@@ -939,8 +948,16 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
                   <svg className="w-full h-full" viewBox="0 0 100 100">
                     {/* Initial circle position (will be updated by GSAP) */}
                     <circle ref={circleRef} cx="50" cy="50" r="5" fill="blue" />
+                    {/* X-axis line */}
+                    <line ref={xAxisRef} x1="0" y1="50" x2="100" y2="50" stroke="gray" strokeWidth="0.2" />
+                    {/* Y-axis line */}
+                    <line ref={yAxisRef} x1="50" y1="0" x2="50" y2="100" stroke="gray" strokeWidth="0.2" />
+                    {/* X-axis label */}
+                    <text ref={xAxisLabelRef} x="98" y="52" textAnchor="end" className="text-[0.3rem] fill-current text-gray-700 dark:text-gray-300">X</text>
+                    {/* Y-axis label */}
+                    <text ref={yAxisLabelRef} x="48" y="5" textAnchor="middle" className="text-[0.3rem] fill-current text-gray-700 dark:text-gray-300">Y</text>
                     {/* Display current time, position, velocity, and acceleration */}
-                    <text ref={timeTextRef} x="2" y="5" className="text-[0.3rem] fill-current text-gray-700 dark:text-gray-300">
+                    <text ref={timeTextRef} x="50" y="95" textAnchor="middle" className="text-[0.3rem] fill-current text-gray-700 dark:text-gray-300">
                       Tiempo: 0.00 s
                       X: 0.00 m
                       Y: 0.00 m
