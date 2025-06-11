@@ -284,7 +284,7 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
   }, [simulationData, slug]);
 
   useEffect(() => {
-    if (simulationData && simulationData.resultados.estados_simulacion && simulationData.resultados.estados_simulacion.length > 0) {
+    if (simulationData && simulationData.resultados && simulationData.resultados.estados_simulacion && simulationData.resultados.estados_simulacion.length > 0) {
       const estados = simulationData.resultados.estados_simulacion;
       const initialEstado = estados[0];
 
@@ -543,7 +543,6 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
   };
 
   const getExpectedParamsForSimulation = (simSlug: string): ParamDefinition[] => {
-    const timeDependentSimsDefault: ParamDefinition[] = [{ name: 'tiempo_total_s', label: 'Tiempo Total', unit: 's' }];
     switch (simSlug) {
       case 'caida-libre':
         return [
@@ -582,20 +581,17 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
           { name: 'radio_m', label: 'Radio', unit: 'm' },
           { name: 'velocidad_angular_rad_s', label: 'Velocidad Angular', unit: 'rad/s' },
           { name: 'velocidad_tangencial_mps', label: 'Velocidad Tangencial', unit: 'm/s' },
-          ...timeDependentSimsDefault,
         ];
       case 'movimiento-armonico-simple':
         return [
           { name: 'amplitud_m', label: 'Amplitud', unit: 'm' },
           { name: 'frecuencia_angular_rad_s', label: 'Frecuencia Angular', unit: 'rad/s' },
           { name: 'fase_inicial_rad', label: 'Fase Inicial', unit: 'rad' },
-          { name: 'tiempo_total_s', label: 'Tiempo Total', unit: 's' },
         ];
       case 'pendulo-simple':
         return [
           { name: 'longitud_m', label: 'Longitud', unit: 'm' },
           { name: 'angulo_inicial_grados', label: 'Ángulo Inicial', unit: '°' },
-          { name: 'tiempo_total_s', label: 'Tiempo Total', unit: 's' },
         ];
       case 'colision-elastica-2d':
         return [
@@ -633,14 +629,12 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
         return [
           { name: 'posicion_inicial_m', label: 'Posición Inicial', unit: 'm' },
           { name: 'velocidad_mps', label: 'Velocidad', unit: 'm/s' },
-          { name: 'tiempo_total_s', label: 'Tiempo Total', unit: 's' },
         ];
       case 'mruv': // Movimiento Rectilíneo Uniformemente Variado
         return [
           { name: 'posicion_inicial_m', label: 'Posición Inicial', unit: 'm' },
           { name: 'velocidad_inicial_mps', label: 'Velocidad Inicial', unit: 'm/s' },
           { name: 'aceleracion_mps2', label: 'Aceleración', unit: 'm/s²' },
-          { name: 'tiempo_total_s', label: 'Tiempo Total', unit: 's' },
         ];
       case 'fuerzas-leyes-newton':
         return [
@@ -657,19 +651,16 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
           { name: 'fuerza', label: 'Fuerza', unit: 'N' },
           { name: 'distancia', label: 'Distancia', unit: 'm' },
           { name: 'angulo', label: 'Ángulo', unit: '°' },
-          ...timeDependentSimsDefault,
         ];
       case 'energia-potencial-gravitatoria':
         return [
           { name: 'masa', label: 'Masa', unit: 'kg' },
           { name: 'altura', label: 'Altura', unit: 'm' },
-          ...timeDependentSimsDefault,
         ];
       case 'energia-potencial-elastica':
         return [
           { name: 'constante_elastica', label: 'Constante Elástica', unit: 'N/m' },
           { name: 'desplazamiento', label: 'Desplazamiento', unit: 'm' },
-          ...timeDependentSimsDefault,
         ];
       case 'ley-ohm':
         return [
