@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { gsap } from 'gsap';
 
 
 // Definir interfaces para los datos de la simulación y los resultados
@@ -34,6 +35,7 @@ interface SimulationResult {
   aceleraciones_angular?: number[];
   posiciones_x_cartesianas?: number[];
   posiciones_y_cartesianas?: number[];
+  estados_simulacion?: any[]; // Add this line for animation states
 }
 
 interface ChartDataPoint {
@@ -67,17 +69,250 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
   const { slug } = use(params);
   const [simulationData, setSimulationData] = useState<SimulationData | null>(null);
   const [inputParams, setInputParams] = useState<SimulationParams>({});
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [graphData, setGraphData] = useState<ChartDataPoint[]>([]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const animationTimeline = useRef<gsap.core.Timeline | null>(null);
+  const circleRef = useRef<SVGCircleElement>(null);
+  const timeTextRef = useRef<SVGTextElement>(null);
 
   useEffect(() => {
     if (simulationData && shouldDisplayChart(slug)) {
       setGraphData(formatDataForChart(simulationData));
-    } else {
-      setGraphData([]);
     }
   }, [simulationData, slug]);
+
+  useEffect(() => {
+    if (simulationData?.resultados?.estados_simulacion && simulationData.resultados.estados_simulacion.length > 0) {
+      const estados = simulationData.resultados.estados_simulacion;
+
+      if (!circleRef.current || !timeTextRef.current) return;
+
+      // Calculate min/max values for scaling
+      let minX = Infinity, maxX = -Infinity;
+      let minY = Infinity, maxY = -Infinity;
+
+      estados.forEach(estado => {
+        switch (slug) {
+          case 'mru':
+          case 'mruv':
+          case 'movimiento-armonico-simple':
+            if (estado.posicion !== undefined) {
+              minX = Math.min(minX, estado.posicion);
+              maxX = Math.max(maxX, estado.posicion);
+            }
+            break;
+          case 'caida-libre':
+            if (estado.altura !== undefined) {
+              minY = Math.min(minY, estado.altura);
+              maxY = Math.max(maxY, estado.altura);
+            }
+            break;
+          case 'tiro-parabolico':
+          case 'movimiento-circular-uniforme':
+          case 'pendulo-simple':
+            if (estado.posicion_x !== undefined) {
+              minX = Math.min(minX, estado.posicion_x);
+              maxX = Math.max(maxX, estado.posicion_x);
+            }
+            if (estado.posicion_y !== undefined) {
+              minY = Math.min(minY, estado.posicion_y);
+              maxY = Math.max(maxY, estado.posicion_y);
+            }
+            break;
+        }
+      });
+
+      // Determine scaling factors and offsets
+      const padding = 10; // Padding inside the 100x100 viewBox
+      const viewBoxWidth = 100;
+      const viewBoxHeight = 100;
+
+      let scaleX = 1, offsetX = 0;
+      let scaleY = 1, offsetY = 0;
+
+      if (maxX !== -Infinity && minX !== Infinity && (maxX - minX) > 0) {
+        scaleX = (viewBoxWidth - 2 * padding) / (maxX - minX);
+        offsetX = padding - minX * scaleX;
+      } else {
+        // Default to center if no movement or single point
+        offsetX = viewBoxWidth / 2 - (estados[0]?.posicion_x || estados[0]?.posicion || 0) * scaleX;
+      }
+
+      if (maxY !== -Infinity && minY !== Infinity && (maxY - minY) > 0) {
+        scaleY = (viewBoxHeight - 2 * padding) / (maxY - minY);
+        offsetY = padding - minY * scaleY; // Invert Y-axis for SVG
+      } else {
+        // Default to center if no movement or single point
+        offsetY = viewBoxHeight / 2 - (estados[0]?.posicion_y || estados[0]?.altura || 0) * scaleY;
+      }
+
+      // Ensure initial state is set
+      const initialEstado = estados[0];
+      let initialCx = 50;
+      let initialCy = 50;
+
+      switch (slug) {
+        case 'mru':
+        case 'mruv':
+        case 'movimiento-armonico-simple':
+          initialCx = initialEstado.posicion !== undefined ? initialEstado.posicion * scaleX + offsetX : 50;
+          initialCy = 50; // Y remains centered for 1D motion
+          break;
+        case 'caida-libre':
+          initialCx = 50; // X remains centered for 1D motion
+          initialCy = initialEstado.altura !== undefined ? viewBoxHeight - (initialEstado.altura * scaleY + offsetY) : 50; // Invert Y for display
+          break;
+        case 'tiro-parabolico':
+        case 'movimiento-circular-uniforme':
+        case 'pendulo-simple':
+          initialCx = initialEstado.posicion_x !== undefined ? initialEstado.posicion_x * scaleX + offsetX : 50;
+          initialCy = initialEstado.posicion_y !== undefined ? viewBoxHeight - (initialEstado.posicion_y * scaleY + offsetY) : 50; // Invert Y for display
+          break;
+      }
+      gsap.set(circleRef.current, { attr: { cx: initialCx, cy: initialCy } });
+      timeTextRef.current.textContent = `Tiempo: ${initialEstado.tiempo?.toFixed(2) || '0.00'} s`;
+
+      // Create a GSAP timeline
+      animationTimeline.current = gsap.timeline({
+        paused: true,
+        onUpdate: () => {
+          const currentTime = animationTimeline.current?.time() || 0;
+          // Find the closest state based on time
+          let currentEstado = estados[0];
+          for (let i = 0; i < estados.length; i++) {
+            if (estados[i].tiempo <= currentTime) {
+              currentEstado = estados[i];
+            } else {
+              break;
+            }
+          }
+
+          if (circleRef.current && timeTextRef.current) {
+            // Update circle position based on simulation type and currentEstado
+            switch (slug) {
+              case 'mru':
+              case 'mruv':
+              case 'movimiento-armonico-simple':
+                gsap.set(circleRef.current, { attr: { cx: currentEstado.posicion * scaleX + offsetX } });
+                break;
+              case 'caida-libre':
+                gsap.set(circleRef.current, { attr: { cy: viewBoxHeight - (currentEstado.altura * scaleY + offsetY) } });
+                break;
+              case 'tiro-parabolico':
+              case 'movimiento-circular-uniforme':
+              case 'pendulo-simple':
+                gsap.set(circleRef.current, { attr: { cx: currentEstado.posicion_x * scaleX + offsetX, cy: viewBoxHeight - (currentEstado.posicion_y * scaleY + offsetY) } });
+                break;
+            }
+
+            // Update time display
+            if (timeTextRef.current) {
+              let displayText = `Tiempo: ${currentEstado.tiempo.toFixed(2)} s\n`;
+
+              if (currentEstado.posicion?.x !== undefined) {
+                displayText += `X: ${currentEstado.posicion.x.toFixed(2)} m\n`;
+              }
+              if (currentEstado.posicion?.y !== undefined) {
+                displayText += `Y: ${currentEstado.posicion.y.toFixed(2)} m\n`;
+              }
+              if (currentEstado.velocidad?.x !== undefined) {
+                displayText += `Vx: ${currentEstado.velocidad.x.toFixed(2)} m/s\n`;
+              }
+              if (currentEstado.velocidad?.y !== undefined) {
+                displayText += `Vy: ${currentEstado.velocidad.y.toFixed(2)} m/s\n`;
+              }
+              if (currentEstado.aceleracion?.x !== undefined) {
+                displayText += `Ax: ${currentEstado.aceleracion.x.toFixed(2)} m/s²\n`;
+              }
+              if (currentEstado.aceleracion?.y !== undefined) {
+                displayText += `Ay: ${currentEstado.aceleracion.y.toFixed(2)} m/s²\n`;
+              }
+
+              if (currentEstado.fuerza !== undefined) {
+                displayText += `Fuerza: ${currentEstado.fuerza.toFixed(2)} N\n`;
+              }
+              if (currentEstado.tension !== undefined) {
+                displayText += `Tensión: ${currentEstado.tension.toFixed(2)} N\n`;
+              }
+              if (currentEstado.energia_potencial !== undefined) {
+                displayText += `Energía Potencial: ${currentEstado.energia_potencial.toFixed(2)} J\n`;
+              }
+              if (currentEstado.energia_cinetica !== undefined) {
+                displayText += `Energía Cinética: ${currentEstado.energia_cinetica.toFixed(2)} J\n`;
+              }
+              if (currentEstado.energia_total !== undefined) {
+                displayText += `Energía Total: ${currentEstado.energia_total.toFixed(2)} J\n`;
+              }
+              if (currentEstado.posicion_angular !== undefined) {
+                displayText += `Posición Angular: ${currentEstado.posicion_angular.toFixed(2)} rad\n`;
+              }
+              if (currentEstado.velocidad_angular !== undefined) {
+                displayText += `Velocidad Angular: ${currentEstado.velocidad_angular.toFixed(2)} rad/s\n`;
+              }
+              if (currentEstado.aceleracion_angular !== undefined) {
+                displayText += `Aceleración Angular: ${currentEstado.aceleracion_angular.toFixed(2)} rad/s²\n`;
+              }
+              if (currentEstado.voltaje_capacitor) {
+                displayText += `Voltaje Capacitor: ${currentEstado.voltaje_capacitor.toFixed(2)} V\n`;
+              }
+              if (currentEstado.corriente) {
+                displayText += `Corriente: ${currentEstado.corriente.toFixed(2)} A\n`;
+              }
+              if (currentEstado.amplitud) {
+                displayText += `Amplitud: ${currentEstado.amplitud.toFixed(2)} m\n`;
+              }
+              if (currentEstado.desplazamiento) {
+                displayText += `Desplazamiento: ${currentEstado.desplazamiento.toFixed(2)} m\n`;
+              }
+              timeTextRef.current.textContent = displayText;
+
+              // To make multiline text work in SVG, we need to create tspan elements
+              const lines = timeTextRef.current.textContent.split('\n');
+              timeTextRef.current.innerHTML = ''; // Clear existing content
+              lines.forEach((line, index) => {
+                const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+                tspan.setAttribute('x', '2');
+                tspan.setAttribute('dy', index === 0 ? '0' : '1.2em'); // Adjust line spacing
+                tspan.textContent = line;
+                timeTextRef.current?.appendChild(tspan);
+              });
+            }
+          }
+        },
+        onComplete: () => setIsPlaying(false) // Stop playing when animation completes
+      });
+
+      const totalDuration = estados[estados.length - 1].tiempo - estados[0].tiempo;
+      animationTimeline.current.to({}, { duration: totalDuration, ease: 'none' });
+    }
+
+    // Cleanup function to destroy the timeline when the component unmounts or simulation data changes
+    return () => {
+      if (animationTimeline.current) {
+        animationTimeline.current.kill();
+        animationTimeline.current = null;
+      }
+    };
+  }, [simulationData, slug]);
+
+  useEffect(() => {
+    if (isPlaying) {
+      animationTimeline.current?.play();
+    } else {
+      animationTimeline.current?.pause();
+    }
+  }, [isPlaying]);
+
+  const handlePlayPause = () => {
+    setIsPlaying(prev => !prev);
+  };
+
+  const handleReset = () => {
+    setIsPlaying(false);
+    animationTimeline.current?.seek(0);
+  };
 
   const isChartableSimulation = (simSlug: string): boolean => {
     const chartableSimulations = [
@@ -97,99 +332,168 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
   };
 
   const formatChartData = (resultados: SimulationResult, simSlug: string): ChartDataPoint[] => {
-    const tiempos = resultados.tiempos || [];
-    let data: ChartDataPoint[] = [];
+    if (resultados.estados_simulacion && resultados.estados_simulacion.length > 0) {
+      return resultados.estados_simulacion.map((estado: any) => {
+        const chartPoint: ChartDataPoint = { tiempo: estado.tiempo };
+        for (const key in estado) {
+          if (key !== 'tiempo') {
+            chartPoint[key] = estado[key];
+          }
+        }
+        return chartPoint;
+      });
+    } else {
+      const tiempos = resultados.tiempos || [];
+      const posiciones = resultados.posiciones || [];
+      const velocidades = resultados.velocidades || [];
+      const aceleraciones = resultados.aceleraciones || [];
+      let data: ChartDataPoint[] = [];
 
-    switch (simSlug) {
-      case 'caida-libre':
-        data = tiempos.map((t, i) => ({
-          tiempo: t,
-          altura: resultados.alturas?.[i] || 0,
-          velocidad: resultados.velocidades?.[i] || 0,
-        }));
-        break;
-      case 'tiro-parabolico':
-        data = tiempos.map((t, i) => ({
-          tiempo: t,
-          posicion_x: resultados.posiciones_x?.[i] || 0,
-          posicion_y: resultados.posiciones_y?.[i] || 0,
-        }));
-        break;
-      case 'plano-inclinado':
-        data = tiempos.map((t, i) => ({
-          tiempo: t,
-          posicion: resultados.posiciones?.[i] || 0,
-          velocidad: resultados.velocidades?.[i] || 0,
-        }));
-        break;
-      case 'movimiento-circular-uniforme':
-        data = tiempos.map((t, i) => ({
-          tiempo: t,
-          posicion_x: resultados.posiciones_x?.[i] || 0,
-          posicion_y: resultados.posiciones_y?.[i] || 0,
-          angulo: resultados.angulos?.[i] || 0,
-        }));
-        break;
-      case 'movimiento-armonico-simple':
-        data = tiempos.map((t, i) => ({
-          tiempo: t,
-          posicion: resultados.posiciones?.[i] || 0,
-          velocidad: resultados.velocidades?.[i] || 0,
-          aceleracion: resultados.aceleraciones?.[i] || 0,
-        }));
-        break;
-      case 'pendulo-simple':
-        data = tiempos.map((t, i) => ({
-          tiempo: t,
-          posicion_angular: resultados.posiciones_angular?.[i] || 0,
-          velocidad_angular: resultados.velocidades_angular?.[i] || 0,
-          aceleracion_angular: resultados.aceleraciones_angular?.[i] || 0,
-          posicion_x_cartesiana: resultados.posiciones_x_cartesianas?.[i] || 0,
-          posicion_y_cartesiana: resultados.posiciones_y_cartesianas?.[i] || 0,
-        }));
-        break;
-      case 'mru':
-        data = tiempos.map((t, i) => ({
-          tiempo: t,
-          posicion: resultados.posiciones?.[i] || 0,
-        }));
-        break;
-      case 'mruv':
-        data = tiempos.map((t, i) => ({
-          tiempo: t,
-          posicion: resultados.posiciones?.[i] || 0,
-          velocidad: resultados.velocidades?.[i] || 0,
-        }));
-        break;
-      case 'fuerzas-leyes-newton':
-        data = tiempos.map((t, i) => ({
-          tiempo: t,
-          posicion: resultados.posiciones?.[i] || 0,
-          velocidad: resultados.velocidades?.[i] || 0,
-        }));
-        break;
-      case 'energia-potencial-conservacion':
-        data = tiempos.map((t, i) => ({
-          tiempo: t,
-          altura: resultados.alturas?.[i] || 0,
-          energia_potencial: resultados.energias_potenciales?.[i] || 0,
-          energia_cinetica: resultados.energias_cineticas?.[i] || 0,
-          energia_total: resultados.energias_totales?.[i] || 0,
-        }));
-        break;
-      case 'energia-potencial-elastica':
-        data = tiempos.map((t, i) => ({
-          tiempo: t,
-          posicion: resultados.posiciones?.[i] || 0,
-          energia_potencial_elastica: resultados.energias_potenciales_elasticas?.[i] || 0,
-          energia_cinetica: resultados.energias_cineticas?.[i] || 0,
-          energia_total: resultados.energias_totales?.[i] || 0,
-        }));
-        break;
-      default:
-        break;
+      switch (simSlug) {
+        case 'caida-libre':
+          data = tiempos.map((t, i) => ({
+            tiempo: t,
+            posicion: posiciones[i] || 0,
+            velocidad: velocidades[i] || 0, 
+            aceleracion: aceleraciones[i] || 0
+          }));
+          break;
+        case 'tiro-parabolico':
+          data = tiempos.map((t, i) => ({
+            tiempo: t,
+            posicion_x: resultados.posiciones_x?.[i] || 0,
+            posicion_y: resultados.posiciones_y?.[i] || 0,
+            velocidad_x: resultados.velocidades_x?.[i] || 0,
+            velocidad_y: resultados.velocidades_y?.[i] || 0,
+            aceleracion_x: resultados.aceleraciones_x?.[i] || 0,
+            aceleracion_y: resultados.aceleraciones_y?.[i] || 0,
+          }));
+          break;
+        case 'plano-inclinado':
+          data = tiempos.map((t, i) => ({
+            tiempo: t,
+            posicion_x: resultados.posiciones_x?.[i] || 0,
+            posicion_y: resultados.posiciones_y?.[i] || 0,
+            velocidad_x: resultados.velocidades_x?.[i] || 0,
+            velocidad_y: resultados.velocidades_y?.[i] || 0,
+            aceleracion_x: resultados.aceleraciones_x?.[i] || 0,
+            aceleracion_y: resultados.aceleraciones_y?.[i] || 0,
+            fuerza: resultados.fuerzas?.[i] || 0,
+          }));
+          break;
+        case 'movimiento-circular-uniforme':
+          data = tiempos.map((t, i) => ({
+            tiempo: t,
+            posicion_x: resultados.posiciones_x?.[i] || 0,
+            posicion_y: resultados.posiciones_y?.[i] || 0,
+            angulo: resultados.angulos?.[i] || 0,
+          }));
+          break;
+        case 'movimiento-armonico-simple':
+          data = tiempos.map((t, i) => ({
+            tiempo: t,
+            posicion_x: resultados.posiciones?.[i] || 0,
+            velocidad_x: resultados.velocidades?.[i] || 0,
+            aceleracion_x: resultados.aceleraciones?.[i] || 0,
+          }));
+          break;
+        case 'pendulo-simple':
+          data = tiempos.map((t, i) => ({
+            tiempo: t,
+            posicion_angular: resultados.posiciones_angular?.[i] || 0,
+            velocidad_angular: resultados.velocidades_angular?.[i] || 0,
+            aceleracion_angular: resultados.aceleraciones_angular?.[i] || 0,
+            posicion_x_cartesiana: resultados.posiciones_x_cartesianas?.[i] || 0,
+            posicion_y_cartesiana: resultados.posiciones_y_cartesianas?.[i] || 0,
+          }));
+          break;
+        case 'mru':
+          data = tiempos.map((t, i) => ({
+            tiempo: t,
+            posicion_x: resultados.posiciones?.[i] || 0,
+            velocidad_x: resultados.velocidades?.[i] || 0,
+          }));
+          break;
+        case 'mruv':
+          data = tiempos.map((t, i) => ({
+            tiempo: t,
+            posicion_x: resultados.posiciones?.[i] || 0,
+            velocidad_x: resultados.velocidades?.[i] || 0,
+            aceleracion_x: resultados.aceleraciones?.[i] || 0,
+          }));
+          break;
+        case 'fuerzas-leyes-newton':
+          data = tiempos.map((t, i) => ({
+            tiempo: t,
+            posicion_x: resultados.posiciones?.[i] || 0,
+            velocidad_x: resultados.velocidades?.[i] || 0,
+            aceleracion_x: resultados.aceleraciones?.[i] || 0,
+            fuerza: resultados.fuerzas?.[i] || 0,
+          }));
+          break;
+        case 'energia-potencial-conservacion':
+          data = tiempos.map((t, i) => ({
+            tiempo: t,
+            posicion_y: resultados.posiciones?.[i] || 0,
+            velocidad_y: resultados.velocidades?.[i] || 0,
+            energia_potencial: resultados.energias_potenciales?.[i] || 0,
+            energia_cinetica: resultados.energias_cineticas?.[i] || 0,
+            energia_total: resultados.energias_totales?.[i] || 0,
+          }));
+          break;
+        case 'energia-potencial-elastica':
+          data = tiempos.map((t, i) => ({
+            tiempo: t,
+            posicion_x: resultados.posiciones?.[i] || 0,
+            velocidad_x: resultados.velocidades?.[i] || 0,
+            fuerza: resultados.fuerzas?.[i] || 0,
+            energia_potencial: resultados.energias_potenciales?.[i] || 0,
+            energia_cinetica: resultados.energias_cineticas?.[i] || 0,
+            energia_total: resultados.energias_totales?.[i] || 0,
+          }));
+          break;
+        case 'ondas-transversales':
+          data = tiempos.map((t, i) => ({
+            tiempo: t,
+            posicion_x: resultados.posiciones_x?.[i] || 0,
+            posicion_y: resultados.posiciones_y?.[i] || 0,
+            amplitud: resultados.amplitudes?.[i] || 0,
+          }));
+          break;
+        case 'ondas-longitudinales':
+          data = tiempos.map((t, i) => ({
+            tiempo: t,
+            posicion_x: resultados.posiciones_x?.[i] || 0,
+            posicion_y: resultados.posiciones_y?.[i] || 0,
+            desplazamiento: resultados.desplazamientos?.[i] || 0,
+          }));
+          break;
+        case 'circuitos-rc':
+          data = tiempos.map((t, i) => ({
+            tiempo: t,
+            voltaje_capacitor: resultados.voltajes_capacitor?.[i] || 0,
+            corriente: resultados.corrientes?.[i] || 0,
+          }));
+          break;
+        case 'circuitos-rl':
+          data = tiempos.map((t, i) => ({
+            tiempo: t,
+            voltaje_inductor: resultados.voltajes_inductor?.[i] || 0,
+            corriente: resultados.corrientes?.[i] || 0,
+          }));
+          break;
+        default:
+          // Default to using 'tiempos' and 'posiciones' if available
+          if (resultados.tiempos && resultados.posiciones) {
+            data = resultados.tiempos.map((t, i) => ({
+              tiempo: t,
+              posicion: resultados.posiciones?.[i] || 0,
+            }));
+          }
+          break;
+      }
+      return data;
     }
-    return data;
   };
 
   const getExpectedParamsForSimulation = (simSlug: string): ParamDefinition[] => {
@@ -490,20 +794,31 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
   };
 
   const shouldDisplayChart = (simSlug: string): boolean => {
-    const chartSims = [
-      'caida-libre',
-      'tiro-parabolico',
-      'movimiento-circular-uniforme',
-      'movimiento-armonico-simple',
-      'pendulo-simple',
-      'mru',
-      'mruv',
-      'fuerzas-leyes-newton',
-      'trabajo-energia',
-      'energia-potencial-conservacion',
-      'energia-potencial-elastica',
-    ];
-    return chartSims.includes(simSlug);
+    // First check if it's a chartable simulation and has results
+    if (!isChartableSimulation(simSlug) || !simulationData?.resultados) {
+      return false;
+    }
+
+    // Then check if any of the required data arrays exist and have length > 0
+    return (
+      (simulationData.resultados.tiempos?.length ?? 0) > 0 ||
+      (simulationData.resultados.posiciones?.length ?? 0) > 0 ||
+      (simulationData.resultados.alturas?.length ?? 0) > 0 ||
+      (simulationData.resultados.posiciones_x?.length ?? 0) > 0 ||
+      (simulationData.resultados.posiciones_y?.length ?? 0) > 0 ||
+      (simulationData.resultados.angulos?.length ?? 0) > 0 ||
+      (simulationData.resultados.velocidades?.length ?? 0) > 0 ||
+      (simulationData.resultados.aceleraciones?.length ?? 0) > 0 ||
+      (simulationData.resultados.energias_potenciales?.length ?? 0) > 0 ||
+      (simulationData.resultados.energias_cineticas?.length ?? 0) > 0 ||
+      (simulationData.resultados.energias_totales?.length ?? 0) > 0 ||
+      (simulationData.resultados.posiciones_angular?.length ?? 0) > 0 ||
+      (simulationData.resultados.velocidades_angular?.length ?? 0) > 0 ||
+      (simulationData.resultados.aceleraciones_angular?.length ?? 0) > 0 ||
+      (simulationData.resultados.posiciones_x_cartesianas?.length ?? 0) > 0 ||
+      (simulationData.resultados.posiciones_y_cartesianas?.length ?? 0) > 0 ||
+      (simulationData.resultados.estados_simulacion?.length ?? 0) > 0
+    );
   };
 
   const formatDataForChart = (data: SimulationData): any[] => {
@@ -615,7 +930,40 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
         {simulationData && (
           <div className="mt-8 w-full max-w-md text-left">
             <h2 className="text-2xl font-bold mb-4 text-center text-gray-600 dark:text-gray-300">Resultados</h2>
-            {shouldDisplayChart(slug) && chartData.length > 0 ? (
+            
+            {/* Animation Section */}
+            {simulationData?.resultados?.estados_simulacion && simulationData.resultados.estados_simulacion.length > 0 ? (
+              <div className="mt-8">
+                <h2 className="text-2xl font-bold mb-4">Animación</h2>
+                <div className="relative w-full h-[500px] bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                  <svg className="w-full h-full" viewBox="0 0 100 100">
+                    {/* Initial circle position (will be updated by GSAP) */}
+                    <circle ref={circleRef} cx="50" cy="50" r="5" fill="blue" />
+                    {/* Display current time, position, velocity, and acceleration */}
+                    <text ref={timeTextRef} x="2" y="5" className="text-[0.3rem] fill-current text-gray-700 dark:text-gray-300">
+                      Tiempo: 0.00 s
+                      X: 0.00 m
+                      Y: 0.00 m
+                      Vx: 0.00 m/s
+                      Vy: 0.00 m/s
+                      Ax: 0.00 m/s²
+                      Ay: 0.00 m/s²
+                    </text>
+                  </svg>
+                </div>
+                <div className="flex space-x-2 mt-4 justify-center">
+                  <Button onClick={handlePlayPause}>
+                    {isPlaying ? 'Pause' : 'Play'}
+                  </Button>
+                  <Button onClick={handleReset}>
+                    Reset
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-500 dark:text-gray-400">No hay datos de animación disponibles para esta simulación.</p>
+            )}
+            {/* {shouldDisplayChart(slug) && chartData.length > 0 ? (
               <div className="w-full h-[400px] mt-4">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
@@ -650,7 +998,7 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
                   <strong className="text-primary">{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:</strong> {JSON.stringify(value)}
                 </p>
               ))
-            )}
+            )} */}
 
             {/* Formulas Section */}
             {simulationData.formulas && simulationData.formulas.length > 0 && (
@@ -689,5 +1037,10 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
     </div>
   );
 };
+
+
+
+
+      onComplete: () => {}
 
 export default SimulationPage;

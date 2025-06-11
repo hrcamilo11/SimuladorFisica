@@ -34,8 +34,11 @@ def calcular_pendulo_simple(longitud, angulo_inicial_rad, gravedad=9.81, tiempo_
     pos_y = -longitud * np.cos(angulos_rad) # y es negativo (hacia arriba desde el punto más bajo) o positivo (hacia abajo desde el pivote)
                                           # Si el pivote es (0,0), y= -Lcos(theta)
 
-    # Combinar los estados en una matriz para facilitar la animación
-    estados_simulacion = np.array([tiempos, angulos_rad, velocidades_angulares, aceleraciones_angulares, pos_x, pos_y]).T.tolist()
+    # Combinar los estados en una lista de diccionarios para facilitar la animación
+    estados_simulacion = [
+        {"tiempo": t, "angulo_rad": ar, "velocidad_angular": va, "aceleracion_angular": aa, "posicion_x": px, "posicion_y": py}
+        for t, ar, va, aa, px, py in zip(tiempos, angulos_rad, velocidades_angulares, aceleraciones_angulares, pos_x, pos_y)
+    ]
 
     return list(tiempos), list(angulos_rad), list(velocidades_angulares), list(aceleraciones_angulares), list(pos_x), list(pos_y), periodo, frecuencia_angular, estados_simulacion
 

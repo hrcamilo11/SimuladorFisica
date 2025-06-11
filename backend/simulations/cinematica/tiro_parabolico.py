@@ -68,8 +68,11 @@ def calcular_tiro_parabolico(velocidad_inicial, angulo_lanzamiento_grados, altur
                     y_reales.append(0)
             break
             
-    # Combinar los estados en una matriz para facilitar la animación
-    estados_simulacion = np.array([tiempos_reales, x_reales, y_reales]).T.tolist()
+    # Combinar los estados en una lista de diccionarios para facilitar la animación
+    estados_simulacion = [
+        {"tiempo": t, "posicion_x": x, "posicion_y": y}
+        for t, x, y in zip(tiempos_reales, x_reales, y_reales)
+    ]
 
     return tiempos_reales, x_reales, y_reales, tiempo_total_simulacion, estados_simulacion
 

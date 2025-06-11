@@ -24,8 +24,11 @@ def calcular_movimiento_armonico_simple(amplitud, frecuencia_angular, fase_inici
     periodo = 2 * np.pi / frecuencia_angular
     frecuencia_hz = 1 / periodo
 
-    # Combinar los estados en una matriz para facilitar la animación
-    estados_simulacion = np.array([tiempos, posiciones, velocidades, aceleraciones]).T.tolist()
+    # Combinar los estados en una lista de diccionarios para facilitar la animación
+    estados_simulacion = [
+        {"tiempo": t, "posicion": p, "velocidad": v, "aceleracion": a}
+        for t, p, v, a in zip(tiempos, posiciones, velocidades, aceleraciones)
+    ]
 
     return list(tiempos), list(posiciones), list(velocidades), list(aceleraciones), periodo, frecuencia_hz, estados_simulacion
 

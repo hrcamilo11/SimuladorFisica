@@ -43,8 +43,11 @@ def calcular_caida_libre(altura_inicial, tiempo_total_simulacion=None, num_punto
                      tiempos_reales.append(tiempo_impacto_real)
             break # Detener después del impacto
             
-    # Combinar los estados en una matriz para facilitar la animación
-    estados_simulacion = np.array([tiempos_reales, alturas_reales, velocidades_reales]).T.tolist()
+    # Combinar los estados en una lista de diccionarios para facilitar la animación
+    estados_simulacion = [
+        {"tiempo": t, "altura": h, "velocidad": v}
+        for t, h, v in zip(tiempos_reales, alturas_reales, velocidades_reales)
+    ]
 
     return tiempos_reales, alturas_reales, velocidades_reales, tiempo_total_simulacion, estados_simulacion
 

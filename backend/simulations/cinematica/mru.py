@@ -15,8 +15,11 @@ def calcular_mru(posicion_inicial, velocidad, tiempo_total, num_puntos=100):
 
     tiempos = np.linspace(0, tiempo_total, num_puntos)
     posiciones = posicion_inicial + velocidad * tiempos
-    # Combinar los estados en una matriz para facilitar la animación
-    estados_simulacion = np.array([tiempos, posiciones]).T.tolist()
+    # Combinar los estados en una lista de diccionarios para facilitar la animación
+    estados_simulacion = [
+        {"tiempo": t, "posicion": p}
+        for t, p in zip(tiempos, posiciones)
+    ]
 
     return list(tiempos), list(posiciones), estados_simulacion
 

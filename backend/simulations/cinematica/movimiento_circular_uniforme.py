@@ -46,8 +46,11 @@ def calcular_movimiento_circular_uniforme(radio, velocidad_angular=None, velocid
     aceleracion_centripeta = (velocidad_tangencial**2) / radio if radio > 0 else 0
     # O también: aceleracion_centripeta = (velocidad_angular**2) * radio
 
-    # Combinar los estados en una matriz para facilitar la animación
-    estados_simulacion = np.array([tiempos, angulos_rad, posiciones_x, posiciones_y]).T.tolist()
+    # Combinar los estados en una lista de diccionarios para facilitar la animación
+    estados_simulacion = [
+        {"tiempo": t, "angulo_rad": a, "posicion_x": x, "posicion_y": y}
+        for t, a, x, y in zip(tiempos, angulos_rad, posiciones_x, posiciones_y)
+    ]
 
     return list(tiempos), list(angulos_rad), list(posiciones_x), list(posiciones_y), aceleracion_centripeta, tiempo_total_simulacion, estados_simulacion
 

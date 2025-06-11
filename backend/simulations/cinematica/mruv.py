@@ -16,8 +16,11 @@ def calcular_mruv(posicion_inicial, velocidad_inicial, aceleracion, tiempo_total
     tiempos = np.linspace(0, tiempo_total, num_puntos)
     posiciones = posicion_inicial + velocidad_inicial * tiempos + 0.5 * aceleracion * tiempos**2
     velocidades = velocidad_inicial + aceleracion * tiempos
-    # Combinar los estados en una matriz para facilitar la animación
-    estados_simulacion = np.array([tiempos, posiciones, velocidades]).T.tolist()
+    # Combinar los estados en una lista de diccionarios para facilitar la animación
+    estados_simulacion = [
+        {"tiempo": t, "posicion": p, "velocidad": v}
+        for t, p, v in zip(tiempos, posiciones, velocidades)
+    ]
 
     return list(tiempos), list(posiciones), list(velocidades), estados_simulacion
 
