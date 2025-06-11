@@ -80,6 +80,7 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
   const yAxisRef = useRef<SVGLineElement>(null);
   const xAxisLabelRef = useRef<SVGTextElement>(null);
   const yAxisLabelRef = useRef<SVGTextElement>(null);
+  const trajectoryPathRef = useRef<SVGPathElement>(null);
 
   useEffect(() => {
     if (simulationData && shouldDisplayChart(slug)) {
@@ -185,13 +186,15 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
           const currentTime = animationTimeline.current?.time() || 0;
           // Find the closest state based on time
           let currentEstado = estados[0];
-          for (let i = 0; i < estados.length; i++) {
-            if (estados[i].tiempo <= currentTime) {
-              currentEstado = estados[i];
-            } else {
-              break;
-            }
-          }
+           let index = 0; // Initialize index outside the loop
+           for (let i = 0; i < estados.length; i++) {
+             if (estados[i].tiempo <= currentTime) {
+               currentEstado = estados[i];
+               index = i; // Update index
+             } else {
+               break;
+             }
+           }
 
           if (circleRef.current && timeTextRef.current) {
             // Update circle position based on simulation type and currentEstado
@@ -207,12 +210,46 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
               case 'tiro-parabolico':
               case 'movimiento-circular-uniforme':
               case 'pendulo-simple':
-                gsap.set(circleRef.current, { attr: { cx: currentEstado.posicion_x * scaleX + offsetX, cy: viewBoxHeight - (currentEstado.posicion_y * scaleY + offsetY) } });
-                break;
-            }
+              gsap.set(circleRef.current, { attr: { cx: currentEstado.posicion_x * scaleX + offsetX, cy: viewBoxHeight - (currentEstado.posicion_y * scaleY + offsetY) } });
+              break;
+          }
 
-            // Update time display
-            if (timeTextRef.current) {
+          // Update trajectory path
+          if (trajectoryPathRef.current) {
+            let pathData = '';
+            estados.slice(0, index + 1).forEach((estado, i) => {
+              let x, y;
+              switch (slug) {
+                case 'caida-libre':
+                case 'movimiento-vertical':
+                  x = initialCx;
+                  y = viewBoxHeight - (estado.altura * scaleY + offsetY);
+                  break;
+                case 'movimiento-horizontal':
+                  x = estado.posicion * scaleX + offsetX;
+                  y = initialCy;
+                  break;
+                case 'tiro-parabolico':
+                case 'movimiento-circular-uniforme':
+                case 'pendulo-simple':
+                  x = estado.posicion_x * scaleX + offsetX;
+                  y = viewBoxHeight - (estado.posicion_y * scaleY + offsetY);
+                  break;
+                default:
+                  x = 50;
+                  y = 50;
+              }
+              if (i === 0) {
+                pathData += `M${x},${y}`;
+              } else {
+                pathData += ` L${x},${y}`;
+              }
+            });
+            gsap.set(trajectoryPathRef.current, { attr: { d: pathData } });
+          }
+
+          // Update time display
+          if (timeTextRef.current) {
               let displayText = `Tiempo: ${currentEstado.tiempo.toFixed(4)} s\n`;
             timeTextRef.current.textContent = displayText;
 
@@ -956,6 +993,8 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
                     <text ref={xAxisLabelRef} x="98" y="52" textAnchor="end" className="text-[0.3rem] fill-current text-gray-700 dark:text-gray-300">X</text>
                     {/* Y-axis label */}
                     <text ref={yAxisLabelRef} x="48" y="5" textAnchor="middle" className="text-[0.3rem] fill-current text-gray-700 dark:text-gray-300">Y</text>
+                    {/* Trajectory Path */}
+                    <path ref={trajectoryPathRef} fill="none" stroke="red" strokeWidth="0.5" strokeDasharray="1,1" />
                     {/* Display current time, position, velocity, and acceleration */}
                     <text ref={timeTextRef} x="50" y="95" textAnchor="middle" className="text-[0.3rem] fill-current text-gray-700 dark:text-gray-300">
                       Tiempo: 0.00 s
