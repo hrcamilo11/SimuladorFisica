@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_restx import Api, Resource, fields
 
 # Importaciones de cinemática
 from simulations.cinematica.caida_libre import simular_caida_libre
@@ -55,150 +56,112 @@ from simulations.cinematica.ecuaciones_cinematicas import (
 app = Flask(__name__)
 CORS(app)
 
+api = Api(app,
+          version='1.0',
+          title='API de Simulaciones Físicas',
+          description='API para simular diversos fenómenos físicos y resolver ecuaciones cinemáticas.',
+          doc='/swagger')
+
+# Definición de namespaces
+ns_cinematica = api.namespace('cinematica', description='Operaciones de Cinemática')
+ns_colisiones = api.namespace('colisiones', description='Operaciones de Colisiones')
+ns_dinamica = api.namespace('dinamica', description='Operaciones de Dinámica')
+ns_energia = api.namespace('energia', description='Operaciones de Energía')
+ns_electricidad_magnetismo = api.namespace('electricidad_magnetismo', description='Operaciones de Electricidad y Magnetismo')
+ns_ondas = api.namespace('ondas', description='Operaciones de Ondas')
+ns_ecuaciones_cinematicas = api.namespace('ecuaciones_cinematicas', description='Operaciones de Ecuaciones Cinemáticas')
+
 # Constantes físicas (si son necesarias, se pueden mover a un archivo de configuración)
 GRAVEDAD = 9.81  # m/s^2
 
-@app.route('/')
-def home():
-    return jsonify({
-        "message": "Bienvenido a la API de Simulaciones Físicas",
-        "available_simulations": [
-            {
-                "category": "Cinemática",
-                "simulations": [
-                    {"name": "Caída Libre", "endpoint": "/simulacion/caida-libre"},
-                    {"name": "Tiro Parabólico", "endpoint": "/simulacion/tiro-parabolico"},
-                    {"name": "Movimiento Circular Uniforme", "endpoint": "/simulacion/movimiento-circular-uniforme"},
-                    {"name": "Péndulo Simple", "endpoint": "/simulacion/pendulo-simple"},
-                    {"name": "Movimiento Armónico Simple", "endpoint": "/simulacion/movimiento-armonico-simple"},
-                    {"name": "Movimiento Rectilíneo Uniforme (MRU)", "endpoint": "/simulacion/mru"},
-                    {"name": "Movimiento Rectilíneo Uniformemente Variado (MRUV)", "endpoint": "/simulacion/mruv"}
-                ]
-            },
-            {
-                "category": "Colisiones",
-                "simulations": [
-                    {"name": "Colisión Elástica 1D", "endpoint": "/simulacion/colision-elastica-1d"},
-                    {"name": "Colisión Elástica 2D", "endpoint": "/simulacion/colision-elastica-2d"},
-                    {"name": "Colisión Elástica 3D", "endpoint": "/simulacion/colision-elastica-3d"},
-                    {"name": "Colisión Perfectamente Inelástica 1D", "endpoint": "/simulacion/colision-perfectamente-inelastica-1d"},
-                    {"name": "Colisión Perfectamente Inelástica 2D", "endpoint": "/simulacion/colision-perfectamente-inelastica-2d"}
-                ]
-            },
-            {
-                "category": "Dinámica",
-                "simulations": [
-                    {"name": "Fuerzas y Leyes de Newton", "endpoint": "/simulacion/fuerzas-leyes-newton"},
-                    {"name": "Plano Inclinado", "endpoint": "/simulacion/plano-inclinado"},
-                    {"name": "Plano Inclinado con Polea", "endpoint": "/simulacion/plano-inclinado-polea"}
-                ]
-            },
-            {
-                "category": "Energía",
-                "simulations": [
-                    {"name": "Trabajo y Energía Cinética", "endpoint": "/simulacion/trabajo-energia"},
-                    {"name": "Energía Potencial Gravitatoria", "endpoint": "/simulacion/energia-potencial-gravitatoria"},
-                    {"name": "Energía Potencial Elástica", "endpoint": "/simulacion/energia-potencial-elastica"}
-                ]
-            },
-            {
-                "category": "Electricidad y Magnetismo",
-                "simulations": [
-                    {"name": "Leyes de Kirchhoff (Voltaje)", "endpoint": "/simulacion/electricidad-y-magnetismo/kirchhoff-voltaje"},
-                    {"name": "Leyes de Kirchhoff (Corriente)", "endpoint": "/simulacion/electricidad-y-magnetismo/kirchhoff-corriente"},
-                    {"name": "Capacitancia", "endpoint": "/simulacion/electricidad-y-magnetismo/capacitancia"},
-                    {"name": "Carga de Capacitor", "endpoint": "/simulacion/electricidad-y-magnetismo/carga-capacitor"},
-                    {"name": "Voltaje de Capacitor", "endpoint": "/simulacion/electricidad-y-magnetismo/voltaje-capacitor"},
-                    {"name": "Circuito en Serie", "endpoint": "/simulacion/electricidad-y-magnetismo/circuito-serie"},
-                    {"name": "Circuito en Paralelo", "endpoint": "/simulacion/electricidad-y-magnetismo/circuito-paralelo"},
-                    {"name": "Corriente Total", "endpoint": "/simulacion/electricidad-y-magnetismo/corriente-total"},
-                    {"name": "Voltaje Total", "endpoint": "/simulacion/electricidad-y-magnetismo/voltaje-total"},
-                    {"name": "Divisor de Voltaje", "endpoint": "/simulacion/electricidad-y-magnetismo/divisor-voltaje"},
-                    {"name": "Potencia Eléctrica", "endpoint": "/simulacion/electricidad-y-magnetismo/potencia-electrica"},
-                    {"name": "Energía Eléctrica", "endpoint": "/simulacion/electricidad-y-magnetismo/energia-electrica"},
-                    {"name": "Caída de Voltaje", "endpoint": "/simulacion/electricidad-y-magnetismo/voltaje-caida"},
-                    {"name": "Eficiencia Eléctrica", "endpoint": "/simulacion/electricidad-y-magnetismo/eficiencia-electrica"},
-                    {"name": "Inductancia", "endpoint": "/simulacion/electricidad-y-magnetismo/inductancia"},
-                    {"name": "Energía en Inductor", "endpoint": "/simulacion/electricidad-y-magnetismo/energia-inductor"},
-                    {"name": "Campo Magnético", "endpoint": "/simulacion/electricidad-y-magnetismo/campo-magnetico"},
-                    {"name": "Fuerza de Lorentz", "endpoint": "/simulacion/electricidad-y-magnetismo/fuerza-lorentz"},
-                    {"name": "Flujo Magnético", "endpoint": "/simulacion/electricidad-y-magnetismo/flujo-magnetico"},
-                    {"name": "Ley de Ohm", "endpoint": "/simulacion/electricidad-y-magnetismo/ley-ohm"},
-                    {"name": "Potencia Ohm", "endpoint": "/simulacion/electricidad-y-magnetismo/potencia-ohm"},
-                    {"name": "Resistencia", "endpoint": "/simulacion/electricidad-y-magnetismo/resistencia"},
-                    {"name": "Ley de Faraday", "endpoint": "/simulacion/electricidad-y-magnetismo/ley-faraday"}
-                ]
-            },
-            {
-                "category": "Ondas",
-                "simulations": [
-                    {"name": "Longitud de Onda", "endpoint": "/simulacion/ondas/longitud-onda"},
-                    {"name": "Frecuencia de Onda", "endpoint": "/simulacion/ondas/frecuencia-onda"}
-                ]
-            },
-            {
-                "category": "Ecuaciones Cinemáticas",
-                "simulations": [
-                    {"name": "Velocidad Final (v = v0 + at)", "endpoint": "/simulacion/ecuaciones-cinematicas/velocidad-final-tiempo"},
-                    {"name": "Posición Final (x = x0 + v0t + 0.5at^2)", "endpoint": "/simulacion/ecuaciones-cinematicas/posicion-final-tiempo"},
-                    {"name": "Velocidad Final (v^2 = v0^2 + 2adx)", "endpoint": "/simulacion/ecuaciones-cinematicas/velocidad-final-desplazamiento"},
-                    {"name": "Desplazamiento (dx = 0.5(v0 + v)t)", "endpoint": "/simulacion/ecuaciones-cinematicas/desplazamiento-velocidades"},
-                    {"name": "Tiempo (t = 2(x - x0)/(v0 + v))", "endpoint": "/simulacion/ecuaciones-cinematicas/tiempo-desplazamiento-velocidades"},
-                    {"name": "Aceleración (a = (v - v0)/t)", "endpoint": "/simulacion/ecuaciones-cinematicas/aceleracion-velocidades-tiempo"},
-                    {"name": "Tiempo (x = x0 + v0t + 0.5at^2)", "endpoint": "/simulacion/ecuaciones-cinematicas/tiempo-posicion-velocidad-aceleracion"},
-                    {"name": "Aceleración (a = 2(x - x0 - v0t)/t^2)", "endpoint": "/simulacion/ecuaciones-cinematicas/aceleracion-posicion-velocidad-tiempo"},
-                    {"name": "Posición Final (x = x0 + (v^2 - v0^2)/(2a))", "endpoint": "/simulacion/ecuaciones-cinematicas/posicion-final-velocidad-aceleracion"}
-                ]
-            }
-        ]
-    })
+# Modelos de datos para Swagger
+caida_libre_model = api.model('CaidaLibreInput', {
+    'altura_inicial': fields.Float(required=True, description='Altura inicial desde la que cae el objeto (m)'),
+    'tiempo_total_simulacion': fields.Float(required=True, description='Tiempo total de la simulación (s)'),
+    'num_puntos': fields.Integer(required=False, default=10000, description='Número de puntos de datos a generar')
+})
 
-# Rutas de Cinemática
-@app.route('/simulacion/caida-libre', methods=['POST'])
-def sim_caida_libre():
-    data = request.get_json()
-    altura_inicial = data.get('altura_inicial')
-    tiempo_total_simulacion = data.get('tiempo_total_simulacion')
-    num_puntos = data.get('num_puntos', 10000)
-    resultado = simular_caida_libre(altura_inicial, tiempo_total_simulacion, num_puntos)
-    return jsonify(resultado)
+@api.route('/')
+class Home(Resource):
+    def get(self):
+        return jsonify({
+            "message": "Bienvenido a la API de Simulaciones Físicas",
+            "documentation": "/swagger"
+        })
 
-# Rutas de Ecuaciones Cinemáticas
-@app.route('/simulacion/ecuaciones-cinematicas/velocidad-final-tiempo', methods=['POST'])
-def api_calcular_velocidad_final_tiempo():
-    data = request.get_json()
-    velocidad_inicial = data.get('velocidad_inicial')
-    aceleracion = data.get('aceleracion')
-    tiempo = data.get('tiempo')
-    if None in [velocidad_inicial, aceleracion, tiempo]:
-        return jsonify({"error": "Faltan parámetros: velocidad_inicial, aceleracion, tiempo"}), 400
-    resultado = calcular_velocidad_final_tiempo(velocidad_inicial, aceleracion, tiempo)
-    return jsonify({"velocidad_final": resultado})
+@ns_cinematica.route('/caida-libre')
+class CaidaLibre(Resource):
+    @ns_cinematica.expect(caida_libre_model)
+    def post(self):
+        data = api.payload
+        altura_inicial = data.get('altura_inicial')
+        tiempo_total_simulacion = data.get('tiempo_total_simulacion')
+        num_puntos = data.get('num_puntos', 10000)
+        resultado = simular_caida_libre(altura_inicial, tiempo_total_simulacion, num_puntos)
+        return jsonify(resultado)
 
-@app.route('/simulacion/ecuaciones-cinematicas/posicion-final-tiempo', methods=['POST'])
-def api_calcular_posicion_final_tiempo():
-    data = request.get_json()
-    posicion_inicial = data.get('posicion_inicial')
-    velocidad_inicial = data.get('velocidad_inicial')
-    aceleracion = data.get('aceleracion')
-    tiempo = data.get('tiempo')
-    if None in [posicion_inicial, velocidad_inicial, aceleracion, tiempo]:
-        return jsonify({"error": "Faltan parámetros: posicion_inicial, velocidad_inicial, aceleracion, tiempo"}), 400
-    resultado = calcular_posicion_final_tiempo(posicion_inicial, velocidad_inicial, aceleracion, tiempo)
-    return jsonify({"posicion_final": resultado})
+# Modelos de datos para Ecuaciones Cinemáticas
+velocidad_final_tiempo_model = api.model('VelocidadFinalTiempoInput', {
+    'velocidad_inicial': fields.Float(required=True, description='Velocidad inicial (m/s)'),
+    'aceleracion': fields.Float(required=True, description='Aceleración (m/s^2)'),
+    'tiempo': fields.Float(required=True, description='Tiempo (s)')
+})
 
-@app.route('/simulacion/ecuaciones-cinematicas/velocidad-final-desplazamiento', methods=['POST'])
-def api_calcular_velocidad_final_desplazamiento():
-    data = request.get_json()
-    velocidad_inicial = data.get('velocidad_inicial')
-    aceleracion = data.get('aceleracion')
-    desplazamiento = data.get('desplazamiento')
-    if None in [velocidad_inicial, aceleracion, desplazamiento]:
-        return jsonify({"error": "Faltan parámetros: velocidad_inicial, aceleracion, desplazamiento"}), 400
-    resultado = calcular_velocidad_final_desplazamiento(velocidad_inicial, aceleracion, desplazamiento)
-    if resultado is None:
-        return jsonify({"error": "No hay solución real para la velocidad final con los parámetros dados."}), 400
-    return jsonify({"velocidad_final": resultado})
+posicion_final_tiempo_model = api.model('PosicionFinalTiempoInput', {
+    'posicion_inicial': fields.Float(required=True, description='Posición inicial (m)'),
+    'velocidad_inicial': fields.Float(required=True, description='Velocidad inicial (m/s)'),
+    'aceleracion': fields.Float(required=True, description='Aceleración (m/s^2)'),
+    'tiempo': fields.Float(required=True, description='Tiempo (s)')
+})
+
+velocidad_final_desplazamiento_model = api.model('VelocidadFinalDesplazamientoInput', {
+    'velocidad_inicial': fields.Float(required=True, description='Velocidad inicial (m/s)'),
+    'aceleracion': fields.Float(required=True, description='Aceleración (m/s^2)'),
+    'desplazamiento': fields.Float(required=True, description='Desplazamiento (m)')
+})
+
+@ns_ecuaciones_cinematicas.route('/velocidad-final-tiempo')
+class VelocidadFinalTiempo(Resource):
+    @ns_ecuaciones_cinematicas.expect(velocidad_final_tiempo_model)
+    def post(self):
+        data = api.payload
+        velocidad_inicial = data.get('velocidad_inicial')
+        aceleracion = data.get('aceleracion')
+        tiempo = data.get('tiempo')
+        if None in [velocidad_inicial, aceleracion, tiempo]:
+            return jsonify({"error": "Faltan parámetros: velocidad_inicial, aceleracion, tiempo"}), 400
+        resultado = calcular_velocidad_final_tiempo(velocidad_inicial, aceleracion, tiempo)
+        return jsonify({"velocidad_final": resultado})
+
+@ns_ecuaciones_cinematicas.route('/posicion-final-tiempo')
+class PosicionFinalTiempo(Resource):
+    @ns_ecuaciones_cinematicas.expect(posicion_final_tiempo_model)
+    def post(self):
+        data = api.payload
+        posicion_inicial = data.get('posicion_inicial')
+        velocidad_inicial = data.get('velocidad_inicial')
+        aceleracion = data.get('aceleracion')
+        tiempo = data.get('tiempo')
+        if None in [posicion_inicial, velocidad_inicial, aceleracion, tiempo]:
+            return jsonify({"error": "Faltan parámetros: posicion_inicial, velocidad_inicial, aceleracion, tiempo"}), 400
+        resultado = calcular_posicion_final_tiempo(posicion_inicial, velocidad_inicial, aceleracion, tiempo)
+        return jsonify({"posicion_final": resultado})
+
+@ns_ecuaciones_cinematicas.route('/velocidad-final-desplazamiento')
+class VelocidadFinalDesplazamiento(Resource):
+    @ns_ecuaciones_cinematicas.expect(velocidad_final_desplazamiento_model)
+    def post(self):
+        data = api.payload
+        velocidad_inicial = data.get('velocidad_inicial')
+        aceleracion = data.get('aceleracion')
+        desplazamiento = data.get('desplazamiento')
+        if None in [velocidad_inicial, aceleracion, desplazamiento]:
+            return jsonify({"error": "Faltan parámetros: velocidad_inicial, aceleracion, desplazamiento"}), 400
+        resultado = calcular_velocidad_final_desplazamiento(velocidad_inicial, aceleracion, desplazamiento)
+        if resultado is None:
+            return jsonify({"error": "No hay solución real para la velocidad final con los parámetros dados."}), 400
+        return jsonify({"velocidad_final": resultado})
+
 
 @app.route('/simulacion/ecuaciones-cinematicas/desplazamiento-velocidades', methods=['POST'])
 def api_calcular_desplazamiento_velocidades():
