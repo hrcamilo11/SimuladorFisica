@@ -46,11 +46,9 @@ interface ChartDataPoint {
 interface SimulationData {
   tipo_simulacion: string;
   parametros_entrada: SimulationParams;
-  formulas: string[];
   resultados: SimulationResult;
   mensaje?: string; // Add optional message field
   error?: string; // Add optional error field
-  // Remove tipo_simulacion and formulas as they are not in the new backend response
 }
 
 interface ParamDefinition {
@@ -65,15 +63,42 @@ interface SimulationPageProps {
   }>;
 }
 
+const getFormulasForSimulation = (simSlug: string): string[] => {
+  switch (simSlug) {
+    case 'caida-libre':
+      return [
+        'y = y₀ + v₀t - ½gt²',
+        'v = v₀ - gt'
+      ];
+    case 'mru':
+      return [
+        'x = x₀ + vt'
+      ];
+    case 'mruv':
+      return [
+        'x = x₀ + v₀t + ½at²',
+        'v = v₀ + at'
+      ];
+    case 'tiro-parabolico':
+      return [
+        'x = x₀ + v₀ₓt',
+        'y = y₀ + v₀ᵧt - ½gt²'
+      ];
+    // Add other simulations as needed
+    default:
+      return [];
+  }
+};
+
 const SimulationPage = ({ params }: SimulationPageProps) => {
   const { slug } = use(params);
   const [simulationData, setSimulationData] = useState<SimulationData | null>(null);
-  const [inputParams, setInputParams] = useState<SimulationParams>({});
+  // const [inputParams, setInputParams] = useState<SimulationParams>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [graphData, setGraphData] = useState<ChartDataPoint[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
-  const animationTimeline = useRef<gsap.core.Timeline | null>(null);
+  const timelineRef = useRef<gsap.core.Timeline | null>(null);
   const circleRef = useRef<SVGCircleElement>(null);
   const timeTextRef = useRef<SVGTextElement>(null);
   const xAxisRef = useRef<SVGLineElement>(null);
@@ -81,6 +106,25 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
   const xAxisLabelRef = useRef<SVGTextElement>(null);
   const yAxisLabelRef = useRef<SVGTextElement>(null);
   const trajectoryPathRef = useRef<SVGPathElement>(null);
+
+  const handlePlayPause = () => {
+    if (timelineRef.current) {
+      if (isPlaying) {
+        timelineRef.current.pause();
+      } else {
+        timelineRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleReset = () => {
+    if (timelineRef.current) {
+      timelineRef.current.restart();
+      timelineRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
 
   useEffect(() => {
     if (simulationData && shouldDisplayChart(slug)) {
@@ -91,6 +135,7 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
   useEffect(() => {
     if (simulationData?.resultados?.estados_simulacion && simulationData.resultados.estados_simulacion.length > 0) {
       const estados = simulationData.resultados.estados_simulacion;
+      console.log("Estados de simulación recibidos:", estados);
 
       if (!circleRef.current || !timeTextRef.current) return;
 
@@ -189,10 +234,10 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
       timeTextRef.current.textContent = `Tiempo: ${initialEstado.tiempo?.toFixed(2) || '0.00'} s`;
 
       // Create a GSAP timeline
-      animationTimeline.current = gsap.timeline({
+      timelineRef.current = gsap.timeline({
         paused: true,
         onUpdate: () => {
-          const currentTime = animationTimeline.current?.time() || 0;
+          const currentTime = timelineRef.current?.time() || 0;
           // Find the closest state based on time
           let currentEstado = estados[0];
            let index = 0; // Initialize index outside the loop
@@ -212,162 +257,123 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
               case 'mruv':
               case 'movimiento-armonico-simple':
                 gsap.set(circleRef.current, { attr: { cx: currentEstado.posicion * scaleX + offsetX } });
+                // Update X-axis label and Y-axis label visibility for 1D motion
+                if (xAxisRef.current && yAxisRef.current && xAxisLabelRef.current && yAxisLabelRef.current) {
+                  gsap.set(xAxisRef.current, { attr: { x1: 0, y1: 50, x2: 100, y2: 50 }, opacity: 1 });
+                  gsap.set(yAxisRef.current, { opacity: 0 }); // Hide Y-axis for 1D motion
+                  gsap.set(xAxisLabelRef.current, { text: 'Posición (m)', x: 98, y: 52, opacity: 1 });
+                  gsap.set(yAxisLabelRef.current, { opacity: 0 }); // Hide Y-axis label
+                }
+                timeTextRef.current.textContent = `Tiempo: ${currentEstado.tiempo?.toFixed(2) || '0.00'} s\nPosición: ${currentEstado.posicion?.toFixed(2) || '0.00'} m`;
+                if (slug === 'mruv') {
+                  timeTextRef.current.textContent += `\nVelocidad: ${currentEstado.velocidad?.toFixed(2) || '0.00'} m/s\nAceleración: ${currentEstado.aceleracion?.toFixed(2) || '0.00'} m/s²`;
+                }
                 break;
               case 'caida-libre':
                 gsap.set(circleRef.current, { attr: { cy: viewBoxHeight - (currentEstado.altura * scaleY + offsetY) } });
+                // Update X-axis label and Y-axis label visibility for 1D motion
+                if (xAxisRef.current && yAxisRef.current && xAxisLabelRef.current && yAxisLabelRef.current) {
+                  gsap.set(xAxisRef.current, { opacity: 0 }); // Hide X-axis for 1D vertical motion
+                  gsap.set(yAxisRef.current, { attr: { x1: 50, y1: 0, x2: 50, y2: 100 }, opacity: 1 });
+                  gsap.set(xAxisLabelRef.current, { opacity: 0 }); // Hide X-axis label
+                  gsap.set(yAxisLabelRef.current, { text: 'Altura (m)', x: 52, y: 5, opacity: 1 });
+                }
+                timeTextRef.current.textContent = `Tiempo: ${currentEstado.tiempo?.toFixed(2) || '0.00'} s\nAltura: ${currentEstado.altura?.toFixed(2) || '0.00'} m\nVelocidad: ${currentEstado.velocidad?.toFixed(2) || '0.00'} m/s`;
                 break;
               case 'tiro-parabolico':
               case 'movimiento-circular-uniforme':
               case 'pendulo-simple':
               gsap.set(circleRef.current, { attr: { cx: currentEstado.posicion_x * scaleX + offsetX, cy: viewBoxHeight - (currentEstado.posicion_y * scaleY + offsetY) } });
+              // Update X-axis label and Y-axis label visibility for 2D motion
+              if (xAxisRef.current && yAxisRef.current && xAxisLabelRef.current && yAxisLabelRef.current) {
+                gsap.set(xAxisRef.current, { attr: { x1: 0, y1: viewBoxHeight - (0 * scaleY + offsetY), x2: 100, y2: viewBoxHeight - (0 * scaleY + offsetY) }, opacity: 1 });
+                gsap.set(yAxisRef.current, { attr: { x1: 0 * scaleX + offsetX, y1: 0, x2: 0 * scaleX + offsetX, y2: 100 }, opacity: 1 });
+                gsap.set(xAxisLabelRef.current, { text: 'X', x: 98, y: viewBoxHeight - (0 * scaleY + offsetY) + 2, opacity: 1 });
+                gsap.set(yAxisLabelRef.current, { text: 'Y', x: (0 * scaleX + offsetX) - 2, y: 5, opacity: 1 });
+              }
+              timeTextRef.current.textContent = `Tiempo: ${currentEstado.tiempo?.toFixed(2) || '0.00'} s\nPosición X: ${currentEstado.posicion_x?.toFixed(2) || '0.00'} m\nPosición Y: ${currentEstado.posicion_y?.toFixed(2) || '0.00'} m\nVelocidad X: ${currentEstado.velocidad_x?.toFixed(2) || '0.00'} m/s\nVelocidad Y: ${currentEstado.velocidad_y?.toFixed(2) || '0.00'} m/s`;
               break;
           }
-
-          // Update trajectory path
-          if (trajectoryPathRef.current) {
-            let pathData = '';
-            estados.slice(0, index + 1).forEach((estado, i) => {
-              let x, y;
-              switch (slug) {
-                case 'caida-libre':
-                case 'movimiento-vertical':
-                  x = initialCx;
-                  y = viewBoxHeight - (estado.altura * scaleY + offsetY);
-                  break;
-                case 'movimiento-horizontal':
-                  x = estado.posicion * scaleX + offsetX;
-                  y = initialCy;
-                  break;
-                case 'tiro-parabolico':
-                case 'movimiento-circular-uniforme':
-                case 'pendulo-simple':
-                  x = estado.posicion_x * scaleX + offsetX;
-                  y = viewBoxHeight - (estado.posicion_y * scaleY + offsetY);
-                  break;
-                default:
-                  x = 50;
-                  y = 50;
-              }
-              if (i === 0) {
-                pathData += `M${x},${y}`;
-              } else {
-                pathData += ` L${x},${y}`;
-              }
-            });
-            gsap.set(trajectoryPathRef.current, { attr: { d: pathData } });
-          }
-
-          // Update time display
-          if (timeTextRef.current) {
-              let displayText = `Tiempo: ${currentEstado.tiempo.toFixed(4)} s\n`;
-            timeTextRef.current.textContent = displayText;
-
-              // To make multiline text work in SVG, we need to create tspan elements
-              const lines = timeTextRef.current.textContent.split('\n');
-              timeTextRef.current.innerHTML = ''; // Clear existing content
-              lines.forEach((line, index) => {
-                const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-                tspan.setAttribute('x', '50');
-                tspan.setAttribute('y', '95');
-                 // Adjust line spacing
-                tspan.textContent = line;
-                timeTextRef.current?.appendChild(tspan);
-              });
-            }
+          timeTextRef.current.textContent = `Tiempo: ${currentEstado.tiempo?.toFixed(2) || '0.00'} s\n` +
+            (currentEstado.posicion !== undefined ? `Posición: ${currentEstado.posicion?.toFixed(2) || '0.00'} m\n` : '') +
+            (currentEstado.altura !== undefined ? `Altura: ${currentEstado.altura?.toFixed(2) || '0.00'} m\n` : '') +
+            (currentEstado.posicion_x !== undefined ? `Posición X: ${currentEstado.posicion_x?.toFixed(2) || '0.00'} m\n` : '') +
+            (currentEstado.posicion_y !== undefined ? `Posición Y: ${currentEstado.posicion_y?.toFixed(2) || '0.00'} m\n` : '') +
+            (currentEstado.velocidad !== undefined ? `Velocidad: ${currentEstado.velocidad?.toFixed(2) || '0.00'} m/s\n` : '') +
+            (currentEstado.velocidad_x !== undefined ? `Velocidad X: ${currentEstado.velocidad_x?.toFixed(2) || '0.00'} m/s\n` : '') +
+            (currentEstado.velocidad_y !== undefined ? `Velocidad Y: ${currentEstado.velocidad_y?.toFixed(2) || '0.00'} m/s\n` : '') +
+            (currentEstado.aceleracion !== undefined ? `Aceleración: ${currentEstado.aceleracion?.toFixed(2) || '0.00'} m/s²` : '');
           }
         },
-        onComplete: () => setIsPlaying(false) // Stop playing when animation completes
+        onComplete: () => {
+          setIsPlaying(false);
+        }
       });
 
-      const totalDuration = estados[estados.length - 1].tiempo - estados[0].tiempo;
-      animationTimeline.current.to({}, { duration: totalDuration, ease: 'none' });
-    }
+      // Set up the animation for the circle
+      const animationDuration = estados[estados.length - 1].tiempo;
+      timelineRef.current?.to(circleRef.current, {
+        duration: animationDuration,
+        ease: 'none',
+        motionPath: {
+          path: estados.map(estado => {
+            switch (slug) {
+              case 'mru':
+              case 'mruv':
+                return { x: estado.posicion * scaleX + offsetX, y: 50 };
+              case 'caida-libre':
+                return { x: 50, y: viewBoxHeight - (estado.altura * scaleY + offsetY) };
+              case 'tiro-parabolico':
+              case 'movimiento-circular-uniforme':
+              case 'pendulo-simple':
+                return { x: estado.posicion_x * scaleX + offsetX, y: viewBoxHeight - (estado.posicion_y * scaleY + offsetY) };
+              default:
+                return { x: 50, y: 50 };
+            }
+          }),
+          curviness: 0, // Straight line for linear motion
+        },
+      });
 
-    // Cleanup function to destroy the timeline when the component unmounts or simulation data changes
-    return () => {
-      if (animationTimeline.current) {
-        animationTimeline.current.kill();
-        animationTimeline.current = null;
-      }
-    };
-  }, [simulationData, slug]);
-
-  useEffect(() => {
-    if (simulationData && simulationData.resultados && simulationData.resultados.estados_simulacion && simulationData.resultados.estados_simulacion.length > 0) {
-      const estados = simulationData.resultados.estados_simulacion;
-      const initialEstado = estados[0];
-
-      let initialX = 0;
-      let initialY = 0;
-
-      switch (slug) {
-        case 'caida-libre':
-        case 'movimiento-vertical':
-          initialY = initialEstado.altura !== undefined ? initialEstado.altura : 0;
-          break;
-        case 'movimiento-horizontal':
-          initialX = initialEstado.posicion !== undefined ? initialEstado.posicion : 0;
-          break;
-        case 'tiro-parabolico':
-        case 'movimiento-circular-uniforme':
-        case 'pendulo-simple':
-          initialX = initialEstado.posicion_x !== undefined ? initialEstado.posicion_x : 0;
-          initialY = initialEstado.posicion_y !== undefined ? initialEstado.posicion_y : 0;
-          break;
-      }
-
-      const minX = Math.min(...estados.map(e => e.posicion_x !== undefined ? e.posicion_x : (e.posicion !== undefined ? e.posicion : 0)), initialX);
-      const maxX = Math.max(...estados.map(e => e.posicion_x !== undefined ? e.posicion_x : (e.posicion !== undefined ? e.posicion : 0)), initialX);
-      const minY = Math.min(...estados.map(e => e.posicion_y !== undefined ? e.posicion_y : (e.altura !== undefined ? e.altura : 0)), initialY);
-      const maxY = Math.max(...estados.map(e => e.posicion_y !== undefined ? e.posicion_y : (e.altura !== undefined ? e.altura : 0)), initialY);
-
-      const padding = 10; // Padding for the axes
-      const viewBoxWidth = 100;
-      const viewBoxHeight = 100;
-
-      const scaleX = (viewBoxWidth - 2 * padding) / (maxX - minX || 1);
-      const offsetX = padding - minX * scaleX;
-      const scaleY = (viewBoxHeight - 2 * padding) / (maxY - minY || 1);
-      const offsetY = padding - minY * scaleY;
-
-      // Position X-axis
-      if (xAxisRef.current) {
-        const yAxisPosition = viewBoxHeight - (initialY * scaleY + offsetY);
-        gsap.set(xAxisRef.current, { attr: { y1: yAxisPosition, y2: yAxisPosition } });
-      }
-      if (xAxisLabelRef.current) {
-        const yAxisPosition = viewBoxHeight - (initialY * scaleY + offsetY);
-        gsap.set(xAxisLabelRef.current, { attr: { y: yAxisPosition + 2 } }); // Offset label slightly
-      }
-
-      // Position Y-axis
-      if (yAxisRef.current) {
-        const xAxisPosition = initialX * scaleX + offsetX;
-        gsap.set(yAxisRef.current, { attr: { x1: xAxisPosition, x2: xAxisPosition } });
-      }
-      if (yAxisLabelRef.current) {
-        const xAxisPosition = initialX * scaleX + offsetX;
-        gsap.set(yAxisLabelRef.current, { attr: { x: xAxisPosition - 2 } }); // Offset label slightly
+      // Draw trajectory path
+      if (trajectoryPathRef.current) {
+        const pathData = estados.map((estado, i) => {
+          let x, y;
+          switch (slug) {
+            case 'mru':
+            case 'mruv':
+              x = estado.posicion * scaleX + offsetX;
+              y = 50; // Keep Y constant for 1D motion
+              break;
+            case 'caida-libre':
+              x = 50; // Keep X constant for 1D motion
+              y = viewBoxHeight - (estado.altura * scaleY + offsetY);
+              break;
+            case 'tiro-parabolico':
+            case 'movimiento-circular-uniforme':
+            case 'pendulo-simple':
+              x = estado.posicion_x * scaleX + offsetX;
+              y = viewBoxHeight - (estado.posicion_y * scaleY + offsetY);
+              break;
+            default:
+              x = 50;
+              y = 50;
+          }
+          return `${i === 0 ? 'M' : 'L'}${x},${y}`;
+        }).join(' ');
+        gsap.set(trajectoryPathRef.current, { attr: { d: pathData } });
       }
     }
   }, [simulationData, slug]);
 
-  useEffect(() => {
-    if (isPlaying) {
-      animationTimeline.current?.play();
-    } else {
-      animationTimeline.current?.pause();
-    }
-  }, [isPlaying]);
-
-  const handlePlayPause = () => {
+  const togglePlayPause = () => {
     setIsPlaying(prev => !prev);
   };
 
-  const handleReset = () => {
-    setIsPlaying(false);
-    animationTimeline.current?.seek(0);
-  };
+  // const handleReset = () => {
+  //   setIsPlaying(false);
+  //   animationTimeline.current?.seek(0);
+  // };
 
   const isChartableSimulation = (simSlug: string): boolean => {
     const chartableSimulations = [
@@ -636,14 +642,16 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
         ];
       case 'mru': // Movimiento Rectilíneo Uniforme
         return [
-          { name: 'posicion_inicial_m', label: 'Posición Inicial', unit: 'm' },
-          { name: 'velocidad_mps', label: 'Velocidad', unit: 'm/s' },
+          { name: 'posicion_inicial', label: 'Posición Inicial', unit: 'm'},
+          { name: 'velocidad', label: 'Velocidad', unit: 'm/s' },
+          { name: 'tiempo_total', label: 'Tiempo Total', unit: 's' },
         ];
       case 'mruv': // Movimiento Rectilíneo Uniformemente Variado
         return [
-          { name: 'posicion_inicial_m', label: 'Posición Inicial', unit: 'm' },
-          { name: 'velocidad_inicial_mps', label: 'Velocidad Inicial', unit: 'm/s' },
-          { name: 'aceleracion_mps2', label: 'Aceleración', unit: 'm/s²' },
+          { name: 'posicion_inicial', label: 'Posición Inicial', unit: 'm' },
+          { name: 'velocidad_inicial', label: 'Velocidad Inicial', unit: 'm/s' },
+          { name: 'aceleracion', label: 'Aceleración', unit: 'm/s²' },
+          { name: 'tiempo_total_simulacion', label: 'Tiempo Total', unit: 's' },
         ];
       case 'fuerzas-leyes-newton':
         return [
@@ -888,10 +896,14 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
   const chartData = simulationData ? formatDataForChart(simulationData) : [];
 
   const handleInputChange = (name: string, value: string) => {
-    setInputParams(prev => ({
-      ...prev,
-      [name]: value === '' ? undefined : parseFloat(value),
-    }));
+    setInputParams(prev => {
+      const paramDef = expectedParams.find(p => p.name === name);
+      const parsedValue = value === '' ? undefined : parseFloat(value);
+      return {
+        ...prev,
+        [name]: parsedValue,
+      };
+    });
   };
 
   const handleSimulate = async () => {
@@ -924,6 +936,7 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
       }
 
       const data = await response.json();
+      console.log("Datos recibidos del backend:", data); // Añadir este console.log
       setSimulationData(data);
     } catch (err: any) {
       console.error(err);
@@ -934,6 +947,17 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
   };
 
   const expectedParams = getExpectedParamsForSimulation(slug);
+  const [inputParams, setInputParams] = useState<SimulationParams>(() => {
+    const initialParams: SimulationParams = {};
+    expectedParams.forEach(param => {
+      if ('defaultValue' in param && param.defaultValue !== undefined) {
+        initialParams[param.name] = param.defaultValue;
+      }
+    });
+    return initialParams;
+  });
+
+  const formulas = getFormulasForSimulation(slug);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2 bg-background text-foreground">
@@ -961,6 +985,20 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
           ))}
           {/* Add optional parameters if needed */}
         </div>
+
+        {/* Formulas Section */}
+        {formulas.length > 0 && (
+          <div className="mb-8 w-full max-w-md p-4 border rounded-lg shadow-md bg-card text-card-foreground">
+            <h2 className="text-2xl font-bold mb-4 text-center text-gray-600 dark:text-gray-300">Fórmulas Utilizadas</h2>
+            <ul className="list-disc list-inside text-left">
+              {formulas.map((formula, index) => (
+                <li key={index} className="mb-2 text-lg">
+                  {formula}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Simulate Button */}
         <Button onClick={handleSimulate} disabled={isLoading} className="mb-8 bg-primary text-primary-foreground hover:bg-primary/90">
@@ -1058,11 +1096,11 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
             )} */}
 
             {/* Formulas Section */}
-            {simulationData.formulas && simulationData.formulas.length > 0 && (
+            {getFormulasForSimulation(slug).length > 0 && (
               <div className="mt-6">
                 <h2 className="text-2xl font-bold mb-4 text-center text-gray-600 dark:text-gray-300">Fórmulas Utilizadas</h2>
                 <ul className="list-disc list-inside text-muted-foreground">
-                  {simulationData.formulas.map((formula, index) => (
+                  {getFormulasForSimulation(slug).map((formula, index) => (
                     <li key={index}>{formula}</li>
                   ))}
                 </ul>
@@ -1097,7 +1135,5 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
 
 
 
-
-      onComplete: () => {}
 
 export default SimulationPage;

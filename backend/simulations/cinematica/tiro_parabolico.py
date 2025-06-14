@@ -1,4 +1,5 @@
 import numpy as np
+from .ecuaciones_cinematicas import calcular_posicion_final_tiempo
 
 GRAVEDAD = 9.81  # m/s^2
 
@@ -51,8 +52,8 @@ def calcular_tiro_parabolico(velocidad_inicial, angulo_lanzamiento_grados, altur
              tiempo_total_simulacion = t2 if t2 > 0 else (t1 if t1 > 0 else 1) # fallback
 
     tiempos = np.linspace(0, tiempo_total_simulacion, num_puntos)
-    posiciones_x = v0x * tiempos
-    posiciones_y = altura_inicial + v0y * tiempos - 0.5 * GRAVEDAD * tiempos**2
+    posiciones_x = [calcular_posicion_final_tiempo(0, v0x, 0, t) for t in tiempos]
+    posiciones_y = [calcular_posicion_final_tiempo(altura_inicial, v0y, -GRAVEDAD, t) for t in tiempos]
 
     # Filtrar puntos después de tocar el suelo (y < 0)
     tiempos_reales = []
@@ -71,7 +72,7 @@ def calcular_tiro_parabolico(velocidad_inicial, angulo_lanzamiento_grados, altur
                 # Necesitamos recalcular t para y=0 usando la fórmula cuadrática completa desde el inicio
                 # Esto ya se hizo para tiempo_total_simulacion, así que usamos ese tiempo si es el correcto
                 if tiempo_total_simulacion > (tiempos_reales[-1] if tiempos_reales else 0):
-                    x_impacto = v0x * tiempo_total_simulacion
+                    x_impacto = calcular_posicion_final_tiempo(0, v0x, 0, tiempo_total_simulacion)
                     tiempos_reales.append(tiempo_total_simulacion)
                     x_reales.append(x_impacto)
                     y_reales.append(0)

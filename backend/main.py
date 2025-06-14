@@ -39,6 +39,19 @@ from simulations.electricidad_y_magnetismo.resistencia import simular_resistenci
 
 # Importaciones de ondas
 from simulations.ondas.ondas import simular_longitud_onda, simular_frecuencia_onda, simular_velocidad_onda
+
+# Importaciones de ecuaciones cinemáticas
+from simulations.cinematica.ecuaciones_cinematicas import (
+    calcular_velocidad_final_tiempo,
+    calcular_posicion_final_tiempo,
+    calcular_velocidad_final_desplazamiento,
+    calcular_desplazamiento_velocidades,
+    calcular_tiempo_desplazamiento_velocidades,
+    calcular_aceleracion_velocidades_tiempo,
+    calcular_tiempo_posicion_velocidad_aceleracion,
+    calcular_aceleracion_posicion_velocidad_tiempo,
+    calcular_posicion_final_velocidad_aceleracion
+)
 app = Flask(__name__)
 CORS(app)
 
@@ -122,6 +135,20 @@ def home():
                     {"name": "Longitud de Onda", "endpoint": "/simulacion/ondas/longitud-onda"},
                     {"name": "Frecuencia de Onda", "endpoint": "/simulacion/ondas/frecuencia-onda"}
                 ]
+            },
+            {
+                "category": "Ecuaciones Cinemáticas",
+                "simulations": [
+                    {"name": "Velocidad Final (v = v0 + at)", "endpoint": "/simulacion/ecuaciones-cinematicas/velocidad-final-tiempo"},
+                    {"name": "Posición Final (x = x0 + v0t + 0.5at^2)", "endpoint": "/simulacion/ecuaciones-cinematicas/posicion-final-tiempo"},
+                    {"name": "Velocidad Final (v^2 = v0^2 + 2adx)", "endpoint": "/simulacion/ecuaciones-cinematicas/velocidad-final-desplazamiento"},
+                    {"name": "Desplazamiento (dx = 0.5(v0 + v)t)", "endpoint": "/simulacion/ecuaciones-cinematicas/desplazamiento-velocidades"},
+                    {"name": "Tiempo (t = 2(x - x0)/(v0 + v))", "endpoint": "/simulacion/ecuaciones-cinematicas/tiempo-desplazamiento-velocidades"},
+                    {"name": "Aceleración (a = (v - v0)/t)", "endpoint": "/simulacion/ecuaciones-cinematicas/aceleracion-velocidades-tiempo"},
+                    {"name": "Tiempo (x = x0 + v0t + 0.5at^2)", "endpoint": "/simulacion/ecuaciones-cinematicas/tiempo-posicion-velocidad-aceleracion"},
+                    {"name": "Aceleración (a = 2(x - x0 - v0t)/t^2)", "endpoint": "/simulacion/ecuaciones-cinematicas/aceleracion-posicion-velocidad-tiempo"},
+                    {"name": "Posición Final (x = x0 + (v^2 - v0^2)/(2a))", "endpoint": "/simulacion/ecuaciones-cinematicas/posicion-final-velocidad-aceleracion"}
+                ]
             }
         ]
     })
@@ -135,6 +162,123 @@ def sim_caida_libre():
     num_puntos = data.get('num_puntos', 100)
     resultado = simular_caida_libre(altura_inicial, tiempo_total_simulacion, num_puntos)
     return jsonify(resultado)
+
+# Rutas de Ecuaciones Cinemáticas
+@app.route('/simulacion/ecuaciones-cinematicas/velocidad-final-tiempo', methods=['POST'])
+def api_calcular_velocidad_final_tiempo():
+    data = request.get_json()
+    velocidad_inicial = data.get('velocidad_inicial')
+    aceleracion = data.get('aceleracion')
+    tiempo = data.get('tiempo')
+    if None in [velocidad_inicial, aceleracion, tiempo]:
+        return jsonify({"error": "Faltan parámetros: velocidad_inicial, aceleracion, tiempo"}), 400
+    resultado = calcular_velocidad_final_tiempo(velocidad_inicial, aceleracion, tiempo)
+    return jsonify({"velocidad_final": resultado})
+
+@app.route('/simulacion/ecuaciones-cinematicas/posicion-final-tiempo', methods=['POST'])
+def api_calcular_posicion_final_tiempo():
+    data = request.get_json()
+    posicion_inicial = data.get('posicion_inicial')
+    velocidad_inicial = data.get('velocidad_inicial')
+    aceleracion = data.get('aceleracion')
+    tiempo = data.get('tiempo')
+    if None in [posicion_inicial, velocidad_inicial, aceleracion, tiempo]:
+        return jsonify({"error": "Faltan parámetros: posicion_inicial, velocidad_inicial, aceleracion, tiempo"}), 400
+    resultado = calcular_posicion_final_tiempo(posicion_inicial, velocidad_inicial, aceleracion, tiempo)
+    return jsonify({"posicion_final": resultado})
+
+@app.route('/simulacion/ecuaciones-cinematicas/velocidad-final-desplazamiento', methods=['POST'])
+def api_calcular_velocidad_final_desplazamiento():
+    data = request.get_json()
+    velocidad_inicial = data.get('velocidad_inicial')
+    aceleracion = data.get('aceleracion')
+    desplazamiento = data.get('desplazamiento')
+    if None in [velocidad_inicial, aceleracion, desplazamiento]:
+        return jsonify({"error": "Faltan parámetros: velocidad_inicial, aceleracion, desplazamiento"}), 400
+    resultado = calcular_velocidad_final_desplazamiento(velocidad_inicial, aceleracion, desplazamiento)
+    if resultado is None:
+        return jsonify({"error": "No hay solución real para la velocidad final con los parámetros dados."}), 400
+    return jsonify({"velocidad_final": resultado})
+
+@app.route('/simulacion/ecuaciones-cinematicas/desplazamiento-velocidades', methods=['POST'])
+def api_calcular_desplazamiento_velocidades():
+    data = request.get_json()
+    velocidad_inicial = data.get('velocidad_inicial')
+    velocidad_final = data.get('velocidad_final')
+    tiempo = data.get('tiempo')
+    if None in [velocidad_inicial, velocidad_final, tiempo]:
+        return jsonify({"error": "Faltan parámetros: velocidad_inicial, velocidad_final, tiempo"}), 400
+    resultado = calcular_desplazamiento_velocidades(velocidad_inicial, velocidad_final, tiempo)
+    return jsonify({"desplazamiento": resultado})
+
+@app.route('/simulacion/ecuaciones-cinematicas/tiempo-desplazamiento-velocidades', methods=['POST'])
+def api_calcular_tiempo_desplazamiento_velocidades():
+    data = request.get_json()
+    posicion_inicial = data.get('posicion_inicial')
+    posicion_final = data.get('posicion_final')
+    velocidad_inicial = data.get('velocidad_inicial')
+    velocidad_final = data.get('velocidad_final')
+    if None in [posicion_inicial, posicion_final, velocidad_inicial, velocidad_final]:
+        return jsonify({"error": "Faltan parámetros: posicion_inicial, posicion_final, velocidad_inicial, velocidad_final"}), 400
+    resultado = calcular_tiempo_desplazamiento_velocidades(posicion_inicial, posicion_final, velocidad_inicial, velocidad_final)
+    if resultado is None:
+        return jsonify({"error": "No se pudo calcular el tiempo (posible división por cero o datos inconsistentes)."}), 400
+    return jsonify({"tiempo": resultado})
+
+@app.route('/simulacion/ecuaciones-cinematicas/aceleracion-velocidades-tiempo', methods=['POST'])
+def api_calcular_aceleracion_velocidades_tiempo():
+    data = request.get_json()
+    velocidad_inicial = data.get('velocidad_inicial')
+    velocidad_final = data.get('velocidad_final')
+    tiempo = data.get('tiempo')
+    if None in [velocidad_inicial, velocidad_final, tiempo]:
+        return jsonify({"error": "Faltan parámetros: velocidad_inicial, velocidad_final, tiempo"}), 400
+    resultado = calcular_aceleracion_velocidades_tiempo(velocidad_inicial, velocidad_final, tiempo)
+    if resultado is None:
+        return jsonify({"error": "No se pudo calcular la aceleración (tiempo es cero)."}), 400
+    return jsonify({"aceleracion": resultado})
+
+@app.route('/simulacion/ecuaciones-cinematicas/tiempo-posicion-velocidad-aceleracion', methods=['POST'])
+def api_calcular_tiempo_posicion_velocidad_aceleracion():
+    data = request.get_json()
+    posicion_inicial = data.get('posicion_inicial')
+    velocidad_inicial = data.get('velocidad_inicial')
+    aceleracion = data.get('aceleracion')
+    posicion_final = data.get('posicion_final')
+    if None in [posicion_inicial, velocidad_inicial, aceleracion, posicion_final]:
+        return jsonify({"error": "Faltan parámetros: posicion_inicial, velocidad_inicial, aceleracion, posicion_final"}), 400
+    resultado = calcular_tiempo_posicion_velocidad_aceleracion(posicion_inicial, velocidad_inicial, aceleracion, posicion_final)
+    if resultado is None:
+        return jsonify({"error": "No hay soluciones reales para el tiempo con los parámetros dados."}), 400
+    return jsonify({"tiempo": resultado})
+
+@app.route('/simulacion/ecuaciones-cinematicas/aceleracion-posicion-velocidad-tiempo', methods=['POST'])
+def api_calcular_aceleracion_posicion_velocidad_tiempo():
+    data = request.get_json()
+    posicion_inicial = data.get('posicion_inicial')
+    posicion_final = data.get('posicion_final')
+    velocidad_inicial = data.get('velocidad_inicial')
+    tiempo = data.get('tiempo')
+    if None in [posicion_inicial, posicion_final, velocidad_inicial, tiempo]:
+        return jsonify({"error": "Faltan parámetros: posicion_inicial, posicion_final, velocidad_inicial, tiempo"}), 400
+    resultado = calcular_aceleracion_posicion_velocidad_tiempo(posicion_inicial, posicion_final, velocidad_inicial, tiempo)
+    if resultado is None:
+        return jsonify({"error": "No se pudo calcular la aceleración (tiempo es cero)."}), 400
+    return jsonify({"aceleracion": resultado})
+
+@app.route('/simulacion/ecuaciones-cinematicas/posicion-final-velocidad-aceleracion', methods=['POST'])
+def api_calcular_posicion_final_velocidad_aceleracion():
+    data = request.get_json()
+    posicion_inicial = data.get('posicion_inicial')
+    velocidad_inicial = data.get('velocidad_inicial')
+    velocidad_final = data.get('velocidad_final')
+    aceleracion = data.get('aceleracion')
+    if None in [posicion_inicial, velocidad_inicial, velocidad_final, aceleracion]:
+        return jsonify({"error": "Faltan parámetros: posicion_inicial, velocidad_inicial, velocidad_final, aceleracion"}), 400
+    resultado = calcular_posicion_final_velocidad_aceleracion(posicion_inicial, velocidad_inicial, velocidad_final, aceleracion)
+    if resultado is None:
+        return jsonify({"error": "No se pudo calcular la posición final (aceleración es cero)."}), 400
+    return jsonify({"posicion_final": resultado})
 
 @app.route('/simulacion/tiro-parabolico', methods=['POST'])
 def sim_tiro_parabolico():
@@ -181,10 +325,12 @@ def sim_movimiento_armonico_simple():
 @app.route('/simulacion/mru', methods=['POST'])
 def sim_mru():
     data = request.get_json()
-    posicion_inicial = data.get('posicion_inicial')
+    posicion_inicial = data.get('posicion_inicial', 0.0) # Default to 0.0 if not provided
     velocidad = data.get('velocidad')
     tiempo_total = data.get('tiempo_total')
-    num_puntos = data.get('num_puntos', 100)
+    num_puntos = data.get('num_puntos', 1000)
+    if None in [posicion_inicial, velocidad, tiempo_total]:
+        return jsonify({"error": "Faltan parámetros: posicion_inicial, velocidad, tiempo_total"}), 400
     resultado = simular_mru(posicion_inicial, velocidad, tiempo_total, num_puntos)
     return jsonify(resultado)
 
@@ -193,9 +339,11 @@ def sim_mruv():
     data = request.get_json()
     velocidad_inicial = data.get('velocidad_inicial')
     aceleracion = data.get('aceleracion')
-    posicion_inicial = data.get('posicion_inicial')
+    posicion_inicial = data.get('posicion_inicial', 0.0)
     tiempo_total_simulacion = data.get('tiempo_total_simulacion')
-    num_puntos = data.get('num_puntos', 100)
+    num_puntos = data.get('num_puntos', 1000)
+    if None in [velocidad_inicial, aceleracion, posicion_inicial, tiempo_total_simulacion]:
+        return jsonify({"error": "Faltan parámetros: velocidad_inicial, aceleracion, posicion_inicial, tiempo_total_simulacion"}), 400
     resultado = simular_mruv(velocidad_inicial, aceleracion, posicion_inicial, tiempo_total_simulacion, num_puntos)
     return jsonify(resultado)
 

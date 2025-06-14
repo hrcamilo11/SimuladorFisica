@@ -1,4 +1,5 @@
 import numpy as np
+from .ecuaciones_cinematicas import calcular_posicion_final_tiempo, calcular_velocidad_final_tiempo
 
 GRAVEDAD = 9.81  # m/s^2
 
@@ -17,8 +18,8 @@ def calcular_caida_libre(altura_inicial, tiempo_total_simulacion=None, num_punto
         tiempo_total_simulacion = tiempo_hasta_suelo
 
     tiempos = np.linspace(0, tiempo_total_simulacion, num_puntos)
-    alturas = altura_inicial - 0.5 * GRAVEDAD * tiempos**2
-    velocidades = -GRAVEDAD * tiempos # Negativo indica hacia abajo
+    alturas = [calcular_posicion_final_tiempo(altura_inicial, 0, -GRAVEDAD, t) for t in tiempos]
+    velocidades = [calcular_velocidad_final_tiempo(0, -GRAVEDAD, t) for t in tiempos]
 
     # Asegurarse de que la altura no sea negativa y el tiempo no exceda el impacto
     alturas_reales = []
@@ -39,7 +40,7 @@ def calcular_caida_libre(altura_inicial, tiempo_total_simulacion=None, num_punto
                 tiempo_impacto_real = np.sqrt(2 * altura_inicial / GRAVEDAD)
                 if tiempo_impacto_real > (tiempos_reales[-1] if tiempos_reales else 0):
                      alturas_reales.append(0)
-                     velocidades_reales.append(-GRAVEDAD * tiempo_impacto_real)
+                     velocidades_reales.append(calcular_velocidad_final_tiempo(0, -GRAVEDAD, tiempo_impacto_real))
                      tiempos_reales.append(tiempo_impacto_real)
             break # Detener después del impacto
             
