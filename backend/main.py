@@ -20,6 +20,7 @@ from simulations.colisiones.colision_perfectamente_inelastica_2d import simular_
 # Importaciones de dinámica
 from simulations.dinamica.leyes_newton import simular_leyes_newton
 from simulations.dinamica.plano_inclinado import simular_plano_inclinado
+from simulations.dinamica.plano_inclinado_polea import simular_plano_inclinado_polea
 
 # Importaciones de energía
 from simulations.energia.trabajo_energia import simular_trabajo_energia_cinetica
@@ -75,7 +76,8 @@ def home():
                 "category": "Dinámica",
                 "simulations": [
                     {"name": "Fuerzas y Leyes de Newton", "endpoint": "/simulacion/fuerzas-leyes-newton"},
-                    {"name": "Plano Inclinado", "endpoint": "/simulacion/plano-inclinado"}
+                    {"name": "Plano Inclinado", "endpoint": "/simulacion/plano-inclinado"},
+                    {"name": "Plano Inclinado con Polea", "endpoint": "/simulacion/plano-inclinado-polea"}
                 ]
             },
             {
@@ -602,6 +604,18 @@ def sim_ley_faraday():
     if campo_magnetico is None or area is None or angulo_grados is None or tiempo is None:
         return jsonify({"success": False, "message": "Se requieren 'campo_magnetico', 'area', 'angulo_grados' y 'tiempo' para la simulación de la Ley de Faraday."}), 400
     resultado = simular_ley_faraday(campo_magnetico, area, angulo_grados, tiempo)
+    return jsonify(resultado)
+
+@app.route('/simulacion/plano-inclinado-polea', methods=['POST'])
+def sim_plano_inclinado_polea():
+    data = request.get_json()
+    masa1 = data.get('masa1')
+    masa2 = data.get('masa2')
+    angulo_inclinacion_grados = data.get('angulo_inclinacion_grados')
+    coeficiente_rozamiento_cinetico = data.get('coeficiente_rozamiento_cinetico')
+    tiempo_total_simulacion = data.get('tiempo_total_simulacion')
+    num_puntos = data.get('num_puntos', 100)
+    resultado = simular_plano_inclinado_polea(masa1, masa2, angulo_inclinacion_grados, coeficiente_rozamiento_cinetico, tiempo_total_simulacion, num_puntos)
     return jsonify(resultado)
 
 if __name__ == '__main__':
