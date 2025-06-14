@@ -45,9 +45,24 @@ El simulador incluye las siguientes simulaciones físicas:
 -   Energía Potencial Gravitatoria y Conservación de Energía Mecánica
 -   Energía Potencial Elástica y Conservación (Sistema Masa-Resorte)
 -   Fuerzas y Leyes de Newton (2da Ley)
+-   Plano Inclinado con Polea (en desarrollo)
 
 Cada simulación permite:
 
 -   Ingresar parámetros iniciales.
 -   Visualizar las fórmulas físicas aplicadas.
 -   Obtener resultados detallados de la simulación.
+
+## Verificación de Funcionalidades
+
+Para verificar que las funcionalidades actuales están operativas, sigue estos pasos:
+
+1.  Asegúrate de que tanto el backend como el frontend estén corriendo. Puedes usar `start_all.bat`.
+2.  Navega a la simulación específica en el frontend (ej. `http://localhost:3001/simulacion/plano-inclinado-polea`).
+3.  Ingresa los parámetros requeridos y haz clic en el botón de simular.
+4.  Abre la consola del navegador (F12) y verifica los logs para:
+    -   `Raw simulation data from backend:`: Para confirmar que los datos se reciben del backend.
+    -   `Simulation data after setting state:`: Para ver el estado de los datos de simulación en el frontend.
+    -   `isChartableSimulation:`: Para verificar si la simulación es chartable.
+    -   `Formatted chart data:`: Para ver los datos formateados para la gráfica/animación.
+    -   Logs de `useEffect` y `onUpdate` para la animación: Para depurar el movimiento de los elementos SVG (`mass1Ref`, `mass2Ref`).
