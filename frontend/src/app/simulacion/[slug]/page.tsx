@@ -160,14 +160,17 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
             }
             break;
           case 'tiro-parabolico':
-            // For parabolic motion, fix minY to 0 and set a reasonable fixed maxY
-            minY = 0; // Ground level
-            maxY = Math.max(maxY, 100); // Set a fixed max Y for consistent scaling, adjust as needed
             if (estado.posicion_x !== undefined) {
               minX = Math.min(minX, estado.posicion_x);
               maxX = Math.max(maxX, estado.posicion_x);
             }
-            // No need to update minY/maxY from estado.posicion_y here as they are fixed
+            if (estado.posicion_y !== undefined) {
+              minY = Math.min(minY, estado.posicion_y);
+              maxY = Math.max(maxY, estado.posicion_y);
+            }
+            // Ensure minX and minY are at least 0 for parabolic motion
+            minX = Math.min(minX, 0);
+            minY = Math.min(minY, 0);
             break;
           case 'movimiento-circular-uniforme':
           case 'pendulo-simple':
@@ -286,7 +289,7 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
               gsap.set(circleRef.current, { attr: { cx: currentEstado.posicion_x * scaleX + offsetX, cy: viewBoxHeight - (currentEstado.posicion_y * scaleY + offsetY) } });
               // Update X-axis label and Y-axis label visibility for 2D motion
               if (xAxisRef.current && yAxisRef.current && xAxisLabelRef.current && yAxisLabelRef.current) {
-                gsap.set(xAxisRef.current, { attr: { x1: 0, y1: viewBoxHeight - (0 * scaleY + offsetY), x2: 100, y2: viewBoxHeight - (0 * scaleY + offsetY) }, opacity: 1 });
+                gsap.set(xAxisRef.current, { attr: { x1: 0 * scaleX + offsetX, y1: viewBoxHeight - (0 * scaleY + offsetY), x2: 100, y2: viewBoxHeight - (0 * scaleY + offsetY) }, opacity: 1 });
                 gsap.set(yAxisRef.current, { attr: { x1: 0 * scaleX + offsetX, y1: 0, x2: 0 * scaleX + offsetX, y2: 100 }, opacity: 1 });
                 gsap.set(xAxisLabelRef.current, { text: 'X', x: 98, y: viewBoxHeight - (0 * scaleY + offsetY) + 2, opacity: 1 });
                 gsap.set(yAxisLabelRef.current, { text: 'Y', x: (0 * scaleX + offsetX) - 2, y: 5, opacity: 1 });
