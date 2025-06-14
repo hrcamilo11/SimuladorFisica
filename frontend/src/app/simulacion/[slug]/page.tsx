@@ -115,6 +115,15 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
             }
             break;
           case 'tiro-parabolico':
+            // For parabolic motion, fix minY to 0 and set a reasonable fixed maxY
+            minY = 0; // Ground level
+            maxY = Math.max(maxY, 100); // Set a fixed max Y for consistent scaling, adjust as needed
+            if (estado.posicion_x !== undefined) {
+              minX = Math.min(minX, estado.posicion_x);
+              maxX = Math.max(maxX, estado.posicion_x);
+            }
+            // No need to update minY/maxY from estado.posicion_y here as they are fixed
+            break;
           case 'movimiento-circular-uniforme':
           case 'pendulo-simple':
             if (estado.posicion_x !== undefined) {
@@ -998,17 +1007,18 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
                     </text>
                   </svg>
                 </div>
-                <div className="flex space-x-2 mt-4 justify-center">
-                  <Button onClick={handlePlayPause}>
-                    {isPlaying ? 'Pause' : 'Play'}
+
+                <div className="flex justify-center mt-4 space-x-4">
+                  <Button onClick={handlePlayPause} className="bg-green-500 hover:bg-green-600 text-white">
+                    {isPlaying ? 'Pausar' : 'Reproducir'}
                   </Button>
-                  <Button onClick={handleReset}>
-                    Reset
+                  <Button onClick={handleReset} className="bg-red-500 hover:bg-red-600 text-white">
+                    Reiniciar
                   </Button>
                 </div>
               </div>
             ) : (
-              <p className="text-gray-500 dark:text-gray-400">No hay datos de animación disponibles para esta simulación.</p>
+              <p className="text-center text-muted-foreground">No animation data available for this simulation.</p>
             )}
             {/* {shouldDisplayChart(slug) && chartData.length > 0 ? (
               <div className="w-full h-[400px] mt-4">

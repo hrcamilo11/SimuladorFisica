@@ -11,8 +11,17 @@ def calcular_tiro_parabolico(velocidad_inicial, angulo_lanzamiento_grados, altur
         return [], [], []
         
     angulo_lanzamiento_rad = np.deg2rad(angulo_lanzamiento_grados)
-    v0x = velocidad_inicial * np.cos(angulo_lanzamiento_rad)
-    v0y = velocidad_inicial * np.sin(angulo_lanzamiento_rad)
+
+    # Ajustar para ángulos cercanos a 0, 90, 180 grados para evitar problemas de punto flotante
+    if abs(angulo_lanzamiento_grados) < 1e-6 or abs(angulo_lanzamiento_grados - 180) < 1e-6: # Horizontal
+        v0x = velocidad_inicial * np.cos(angulo_lanzamiento_rad)
+        v0y = 0.0
+    elif abs(angulo_lanzamiento_grados - 90) < 1e-6: # Vertical
+        v0x = 0.0
+        v0y = velocidad_inicial * np.sin(angulo_lanzamiento_rad)
+    else:
+        v0x = velocidad_inicial * np.cos(angulo_lanzamiento_rad)
+        v0y = velocidad_inicial * np.sin(angulo_lanzamiento_rad)
 
     # Tiempo total de vuelo (hasta que y vuelva a ser altura_inicial o 0 si altura_inicial es 0)
     # y(t) = y0 + v0y*t - 0.5*g*t^2
