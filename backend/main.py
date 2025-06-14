@@ -159,7 +159,7 @@ def sim_caida_libre():
     data = request.get_json()
     altura_inicial = data.get('altura_inicial')
     tiempo_total_simulacion = data.get('tiempo_total_simulacion')
-    num_puntos = data.get('num_puntos', 100)
+    num_puntos = data.get('num_puntos', 10000)
     resultado = simular_caida_libre(altura_inicial, tiempo_total_simulacion, num_puntos)
     return jsonify(resultado)
 
@@ -286,7 +286,7 @@ def sim_tiro_parabolico():
     velocidad_inicial = data.get('velocidad_inicial')
     angulo_lanzamiento_grados = data.get('angulo_lanzamiento_grados')
     altura_inicial = data.get('altura_inicial', 0)
-    num_puntos = data.get('num_puntos', 100)
+    num_puntos = data.get('num_puntos', 10000)
     resultado = simular_tiro_parabolico(velocidad_inicial, angulo_lanzamiento_grados, altura_inicial, num_puntos)
     return jsonify(resultado)
 
@@ -297,7 +297,7 @@ def sim_movimiento_circular_uniforme():
     velocidad_angular = data.get('velocidad_angular')
     velocidad_tangencial = data.get('velocidad_tangencial')
     tiempo_total_simulacion = data.get('tiempo_total_simulacion')
-    num_puntos = data.get('num_puntos', 100)
+    num_puntos = data.get('num_puntos', 10000)
     resultado = simular_movimiento_circular_uniforme(radio, velocidad_angular, velocidad_tangencial, tiempo_total_simulacion, num_puntos)
     return jsonify(resultado)
 
@@ -307,7 +307,7 @@ def sim_pendulo_simple():
     longitud = data.get('longitud')
     angulo_inicial_grados = data.get('angulo_inicial_grados')
     tiempo_total_simulacion = data.get('tiempo_total_simulacion')
-    num_puntos = data.get('num_puntos', 200)
+    num_puntos = data.get('num_puntos', 10000)
     resultado = simular_pendulo_simple(longitud, angulo_inicial_grados, tiempo_total_simulacion=tiempo_total_simulacion, num_puntos=num_puntos)
     return jsonify(resultado)
 
@@ -318,7 +318,7 @@ def sim_movimiento_armonico_simple():
     frecuencia_angular = data.get('frecuencia_angular')
     fase_inicial = data.get('fase_inicial', 0)
     tiempo_total_simulacion = data.get('tiempo_total_simulacion')
-    num_puntos = data.get('num_puntos', 100)
+    num_puntos = data.get('num_puntos', 10000)
     resultado = simular_movimiento_armonico_simple(amplitud, frecuencia_angular, fase_inicial, tiempo_total_simulacion, num_puntos)
     return jsonify(resultado)
 
@@ -328,7 +328,7 @@ def sim_mru():
     posicion_inicial = data.get('posicion_inicial', 0.0) # Default to 0.0 if not provided
     velocidad = data.get('velocidad')
     tiempo_total = data.get('tiempo_total')
-    num_puntos = data.get('num_puntos', 1000)
+    num_puntos = data.get('num_puntos', 10000)
     if None in [posicion_inicial, velocidad, tiempo_total]:
         return jsonify({"error": "Faltan parámetros: posicion_inicial, velocidad, tiempo_total"}), 400
     resultado = simular_mru(posicion_inicial, velocidad, tiempo_total, num_puntos)
@@ -341,7 +341,7 @@ def sim_mruv():
     aceleracion = data.get('aceleracion')
     posicion_inicial = data.get('posicion_inicial', 0.0)
     tiempo_total_simulacion = data.get('tiempo_total_simulacion')
-    num_puntos = data.get('num_puntos', 1000)
+    num_puntos = data.get('num_puntos', 10000)
     if None in [velocidad_inicial, aceleracion, posicion_inicial, tiempo_total_simulacion]:
         return jsonify({"error": "Faltan parámetros: velocidad_inicial, aceleracion, posicion_inicial, tiempo_total_simulacion"}), 400
     resultado = simular_mruv(posicion_inicial, velocidad_inicial, aceleracion, tiempo_total_simulacion, num_puntos)
@@ -422,7 +422,7 @@ def sim_fuerzas_leyes_newton():
     coeficiente_rozamiento_estatico = data.get('coeficiente_rozamiento_estatico')
     coeficiente_rozamiento_cinetico = data.get('coeficiente_rozamiento_cinetico')
     tiempo_total = data.get('tiempo_total')
-    num_puntos = data.get('num_puntos', 100)
+    num_puntos = data.get('num_puntos', 10000)
     resultado = simular_leyes_newton(masa, fuerza_aplicada, angulo_grados, coeficiente_rozamiento_estatico, coeficiente_rozamiento_cinetico, tiempo_total, num_puntos)
     return jsonify(resultado)
 
@@ -435,7 +435,7 @@ def sim_plano_inclinado():
     coeficiente_rozamiento_cinetico = data.get('coeficiente_rozamiento_cinetico')
     distancia_plano = data.get('distancia_plano')
     velocidad_inicial = data.get('velocidad_inicial', 0)
-    num_puntos = data.get('num_puntos', 100)
+    num_puntos = data.get('num_puntos', 10000)
     resultado = simular_plano_inclinado(masa, angulo_inclinacion_grados, coeficiente_rozamiento_estatico, coeficiente_rozamiento_cinetico, distancia_plano, velocidad_inicial, num_puntos)
     return jsonify(resultado)
 
@@ -468,7 +468,7 @@ def sim_energia_potencial_elastica():
     constante_elastica = data.get('constante_elastica')
     amplitud = data.get('amplitud')
     tiempo_total = data.get('tiempo_total')
-    num_puntos = data.get('num_puntos', 100)
+    num_puntos = data.get('num_puntos', 10000)
     fase_inicial_rad = data.get('fase_inicial_rad', 0)
     resultado = simular_energia_potencial_elastica(masa, constante_elastica, amplitud, tiempo_total, num_puntos, fase_inicial_rad)
     return jsonify(resultado)
@@ -762,7 +762,7 @@ def sim_plano_inclinado_polea():
     angulo_inclinacion_grados = data.get('angulo_inclinacion_grados')
     coeficiente_rozamiento_cinetico = data.get('coeficiente_rozamiento_cinetico')
     tiempo_total_simulacion = data.get('tiempo_total_simulacion')
-    num_puntos = data.get('num_puntos', 100)
+    num_puntos = data.get('num_puntos', 10000)
     resultado = simular_plano_inclinado_polea(masa1, masa2, angulo_inclinacion_grados, coeficiente_rozamiento_cinetico, tiempo_total_simulacion, num_puntos)
     return jsonify(resultado)
 
