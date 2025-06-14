@@ -344,7 +344,7 @@ def sim_mruv():
     num_puntos = data.get('num_puntos', 1000)
     if None in [velocidad_inicial, aceleracion, posicion_inicial, tiempo_total_simulacion]:
         return jsonify({"error": "Faltan parámetros: velocidad_inicial, aceleracion, posicion_inicial, tiempo_total_simulacion"}), 400
-    resultado = simular_mruv(velocidad_inicial, aceleracion, posicion_inicial, tiempo_total_simulacion, num_puntos)
+    resultado = simular_mruv(posicion_inicial, velocidad_inicial, aceleracion, tiempo_total_simulacion, num_puntos)
     return jsonify(resultado)
 
 # Rutas de Colisiones

@@ -1012,7 +1012,7 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
 
         {/* Simulation Results Section */}
         {simulationData && (
-          <div className="mt-8 w-full max-w-md text-left">
+          <div className="mt-8 w-full max-w-3xl text-left">
             <h2 className="text-2xl font-bold mb-4 text-center text-gray-600 dark:text-gray-300">Resultados</h2>
             
             {/* Animation Section */}
