@@ -367,6 +367,12 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
         gsap.set(trajectoryPathRef.current, { attr: { d: pathData } });
       }
     }
+
+    return () => {
+      if (timelineRef.current) {
+        timelineRef.current.kill(); // Destroy the timeline on unmount or data change
+      }
+    };
   }, [simulationData, slug]);
 
   const togglePlayPause = () => {
