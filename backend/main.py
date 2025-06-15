@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_restx import Api, Resource, fields
+from flask_restx import Api, Resource
+from schemas import init_schemas
 
 # Importaciones de cinemática
 from simulations.cinematica.caida_libre import simular_caida_libre
@@ -56,11 +57,91 @@ from simulations.cinematica.ecuaciones_cinematicas import (
 app = Flask(__name__)
 CORS(app)
 
+@app.route('/')
+def get_available_simulations():
+    available_simulations = [
+            {
+                "category": "Cinemática",
+                "simulations": [
+                    {"name": "Caída Libre", "path": "/cinematica/caida-libre"},
+                    {"name": "Tiro Parabólico", "path": "/simulacion/tiro-parabolico"},
+                    {"name": "Movimiento Circular Uniforme", "path": "/simulacion/movimiento-circular-uniforme"},
+                    {"name": "Péndulo Simple", "path": "/simulacion/pendulo-simple"},
+                    {"name": "Movimiento Armónico Simple", "path": "/simulacion/movimiento-armonico-simple"},
+                    {"name": "Movimiento Rectilíneo Uniforme (MRU)", "path": "/simulacion/mru"},
+                    {"name": "Movimiento Rectilíneo Uniformemente Variado (MRUV)", "path": "/simulacion/mruv"}
+                ]
+            },
+            {
+                "category": "Colisiones",
+                "simulations": [
+                    {"name": "Colisión Elástica 1D", "path": "/simulacion/colision-elastica-1d"},
+                    {"name": "Colisión Elástica 2D", "path": "/simulacion/colision-elastica-2d"},
+                    {"name": "Colisión Elástica 3D", "path": "/simulacion/colision-elastica-3d"},
+                    {"name": "Colisión Perfectamente Inelástica 1D", "path": "/simulacion/colision-perfectamente-inelastica-1d"},
+                    {"name": "Colisión Perfectamente Inelástica 2D", "path": "/simulacion/colision-perfectamente-inelastica-2d"}
+                ]
+            },
+            {
+                "category": "Dinámica",
+                "simulations": [
+                    {"name": "Leyes de Newton", "path": "/simulacion/fuerzas-leyes-newton"},
+                    {"name": "Plano Inclinado", "path": "/simulacion/plano-inclinado"},
+                    {"name": "Plano Inclinado con Polea", "path": "/simulacion/plano-inclinado-polea"}
+                ]
+            },
+            {
+                "category": "Energía",
+                "simulations": [
+                    {"name": "Trabajo y Energía Cinética", "path": "/simulacion/trabajo-energia-cinetica"},
+                    {"name": "Energía Potencial Gravitatoria", "path": "/simulacion/energia-potencial-gravitatoria"},
+                    {"name": "Energía Potencial Elástica", "path": "/simulacion/energia-potencial-elastica"}
+                ]
+            },
+            {
+                "category": "Electricidad y Magnetismo",
+                "simulations": [
+                    {"name": "Leyes de Kirchhoff", "path": "/simulacion/leyes-kirchhoff"},
+                    {"name": "Capacitancia", "path": "/simulacion/capacitancia"},
+                    {"name": "Cálculos de Circuitos", "path": "/simulacion/calculos-circuitos"},
+                    {"name": "Potencia Eléctrica", "path": "/simulacion/potencia-electrica"},
+                    {"name": "Inductancia", "path": "/simulacion/inductancia"},
+                    {"name": "Magnetismo", "path": "/simulacion/magnetismo"},
+                    {"name": "Ley de Ohm", "path": "/simulacion/ley-ohm"},
+                    {"name": "Resistencia", "path": "/simulacion/resistencia"}
+                ]
+            },
+            {
+                "category": "Ondas",
+                "simulations": [
+                    {"name": "Longitud de Onda", "path": "/simulacion/longitud-onda"},
+                    {"name": "Frecuencia de Onda", "path": "/simulacion/frecuencia-onda"},
+                    {"name": "Velocidad de Onda", "path": "/simulacion/velocidad-onda"}
+                ]
+            },
+            {
+                "category": "Ecuaciones Cinemáticas",
+                "simulations": [
+                    {"name": "Velocidad Final (t)", "path": "/ecuaciones-cinematicas/velocidad-final-tiempo"},
+                    {"name": "Posición Final (t)", "path": "/ecuaciones-cinematicas/posicion-final-tiempo"},
+                    {"name": "Velocidad Final (d)", "path": "/ecuaciones-cinematicas/velocidad-final-desplazamiento"},
+                    {"name": "Desplazamiento (v,t)", "path": "/simulacion/ecuaciones-cinematicas/desplazamiento-velocidades"},
+                    {"name": "Tiempo (d,v)", "path": "/simulacion/ecuaciones-cinematicas/tiempo-desplazamiento-velocidades"},
+                    {"name": "Aceleración (v,t)", "path": "/simulacion/ecuaciones-cinematicas/aceleracion-velocidades-tiempo"},
+                    {"name": "Tiempo (d,v,a)", "path": "/simulacion/ecuaciones-cinematicas/tiempo-posicion-velocidad-aceleracion"},
+                    {"name": "Aceleración (d,v,t)", "path": "/simulacion/ecuaciones-cinematicas/aceleracion-posicion-velocidad-tiempo"},
+                    {"name": "Posición Final (v,a)", "path": "/simulacion/ecuaciones-cinematicas/posicion-final-velocidad-aceleracion"}
+                ]
+            }
+        ]
+    return jsonify({"available_simulations": available_simulations})
+
 api = Api(app,
           version='1.0',
           title='API de Simulaciones Físicas',
           description='API para simular diversos fenómenos físicos y resolver ecuaciones cinemáticas.',
           doc='/swagger')
+
 
 # Definición de namespaces
 ns_cinematica = api.namespace('cinematica', description='Operaciones de Cinemática')
@@ -74,24 +155,13 @@ ns_ecuaciones_cinematicas = api.namespace('ecuaciones_cinematicas', description=
 # Constantes físicas (si son necesarias, se pueden mover a un archivo de configuración)
 GRAVEDAD = 9.81  # m/s^2
 
-# Modelos de datos para Swagger
-caida_libre_model = api.model('CaidaLibreInput', {
-    'altura_inicial': fields.Float(required=True, description='Altura inicial desde la que cae el objeto (m)'),
-    'tiempo_total_simulacion': fields.Float(required=True, description='Tiempo total de la simulación (s)'),
-    'num_puntos': fields.Integer(required=False, default=10000, description='Número de puntos de datos a generar')
-})
 
-@api.route('/')
-class Home(Resource):
-    def get(self):
-        return jsonify({
-            "message": "Bienvenido a la API de Simulaciones Físicas",
-            "documentation": "/swagger"
-        })
+# Inicializar modelos de datos
+models = init_schemas(api)
 
 @ns_cinematica.route('/caida-libre')
 class CaidaLibre(Resource):
-    @ns_cinematica.expect(caida_libre_model)
+    @ns_cinematica.expect(models['caida_libre_model'])
     def post(self):
         data = api.payload
         altura_inicial = data.get('altura_inicial')
@@ -100,29 +170,9 @@ class CaidaLibre(Resource):
         resultado = simular_caida_libre(altura_inicial, tiempo_total_simulacion, num_puntos)
         return jsonify(resultado)
 
-# Modelos de datos para Ecuaciones Cinemáticas
-velocidad_final_tiempo_model = api.model('VelocidadFinalTiempoInput', {
-    'velocidad_inicial': fields.Float(required=True, description='Velocidad inicial (m/s)'),
-    'aceleracion': fields.Float(required=True, description='Aceleración (m/s^2)'),
-    'tiempo': fields.Float(required=True, description='Tiempo (s)')
-})
-
-posicion_final_tiempo_model = api.model('PosicionFinalTiempoInput', {
-    'posicion_inicial': fields.Float(required=True, description='Posición inicial (m)'),
-    'velocidad_inicial': fields.Float(required=True, description='Velocidad inicial (m/s)'),
-    'aceleracion': fields.Float(required=True, description='Aceleración (m/s^2)'),
-    'tiempo': fields.Float(required=True, description='Tiempo (s)')
-})
-
-velocidad_final_desplazamiento_model = api.model('VelocidadFinalDesplazamientoInput', {
-    'velocidad_inicial': fields.Float(required=True, description='Velocidad inicial (m/s)'),
-    'aceleracion': fields.Float(required=True, description='Aceleración (m/s^2)'),
-    'desplazamiento': fields.Float(required=True, description='Desplazamiento (m)')
-})
-
 @ns_ecuaciones_cinematicas.route('/velocidad-final-tiempo')
 class VelocidadFinalTiempo(Resource):
-    @ns_ecuaciones_cinematicas.expect(velocidad_final_tiempo_model)
+    @ns_ecuaciones_cinematicas.expect(models['velocidad_final_tiempo_model'])
     def post(self):
         data = api.payload
         velocidad_inicial = data.get('velocidad_inicial')
@@ -163,116 +213,165 @@ class VelocidadFinalDesplazamiento(Resource):
         return jsonify({"velocidad_final": resultado})
 
 
-@app.route('/simulacion/ecuaciones-cinematicas/desplazamiento-velocidades', methods=['POST'])
-def api_calcular_desplazamiento_velocidades():
-    data = request.get_json()
-    velocidad_inicial = data.get('velocidad_inicial')
-    velocidad_final = data.get('velocidad_final')
-    tiempo = data.get('tiempo')
-    if None in [velocidad_inicial, velocidad_final, tiempo]:
-        return jsonify({"error": "Faltan parámetros: velocidad_inicial, velocidad_final, tiempo"}), 400
-    resultado = calcular_desplazamiento_velocidades(velocidad_inicial, velocidad_final, tiempo)
-    return jsonify({"desplazamiento": resultado})
 
-@app.route('/simulacion/ecuaciones-cinematicas/tiempo-desplazamiento-velocidades', methods=['POST'])
-def api_calcular_tiempo_desplazamiento_velocidades():
-    data = request.get_json()
-    posicion_inicial = data.get('posicion_inicial')
-    posicion_final = data.get('posicion_final')
-    velocidad_inicial = data.get('velocidad_inicial')
-    velocidad_final = data.get('velocidad_final')
-    if None in [posicion_inicial, posicion_final, velocidad_inicial, velocidad_final]:
-        return jsonify({"error": "Faltan parámetros: posicion_inicial, posicion_final, velocidad_inicial, velocidad_final"}), 400
-    resultado = calcular_tiempo_desplazamiento_velocidades(posicion_inicial, posicion_final, velocidad_inicial, velocidad_final)
-    if resultado is None:
-        return jsonify({"error": "No se pudo calcular el tiempo (posible división por cero o datos inconsistentes)."}), 400
-    return jsonify({"tiempo": resultado})
+@ns_ecuaciones_cinematicas.route('/posicion-final-tiempo')
+class PosicionFinalTiempo(Resource):
+    @ns_ecuaciones_cinematicas.expect(models['posicion_final_tiempo_model'])
+    def post(self):
+        data = api.payload
+        posicion_inicial = data.get('posicion_inicial')
+        velocidad_inicial = data.get('velocidad_inicial')
+        aceleracion = data.get('aceleracion')
+        tiempo = data.get('tiempo')
+        if None in [posicion_inicial, velocidad_inicial, aceleracion, tiempo]:
+            return jsonify({"error": "Faltan parámetros: posicion_inicial, velocidad_inicial, aceleracion, tiempo"}), 400
+        resultado = calcular_posicion_final_tiempo(posicion_inicial, velocidad_inicial, aceleracion, tiempo)
+        return jsonify({"posicion_final": resultado})
 
-@app.route('/simulacion/ecuaciones-cinematicas/aceleracion-velocidades-tiempo', methods=['POST'])
-def api_calcular_aceleracion_velocidades_tiempo():
-    data = request.get_json()
-    velocidad_inicial = data.get('velocidad_inicial')
-    velocidad_final = data.get('velocidad_final')
-    tiempo = data.get('tiempo')
-    if None in [velocidad_inicial, velocidad_final, tiempo]:
-        return jsonify({"error": "Faltan parámetros: velocidad_inicial, velocidad_final, tiempo"}), 400
-    resultado = calcular_aceleracion_velocidades_tiempo(velocidad_inicial, velocidad_final, tiempo)
-    if resultado is None:
-        return jsonify({"error": "No se pudo calcular la aceleración (tiempo es cero)."}), 400
-    return jsonify({"aceleracion": resultado})
+@ns_ecuaciones_cinematicas.route('/velocidad-final-desplazamiento')
+class VelocidadFinalDesplazamiento(Resource):
+    @ns_ecuaciones_cinematicas.expect(models['velocidad_final_desplazamiento_model'])
+    def post(self):
+        data = api.payload
+        velocidad_inicial = data.get('velocidad_inicial')
+        aceleracion = data.get('aceleracion')
+        desplazamiento = data.get('desplazamiento')
+        if None in [velocidad_inicial, aceleracion, desplazamiento]:
+            return jsonify({"error": "Faltan parámetros: velocidad_inicial, aceleracion, desplazamiento"}), 400
+        resultado = calcular_velocidad_final_desplazamiento(velocidad_inicial, aceleracion, desplazamiento)
+        if resultado is None:
+            return jsonify({"error": "No hay solución real para la velocidad final con los parámetros dados."}), 400
+        return jsonify({"velocidad_final": resultado})
 
-@app.route('/simulacion/ecuaciones-cinematicas/tiempo-posicion-velocidad-aceleracion', methods=['POST'])
-def api_calcular_tiempo_posicion_velocidad_aceleracion():
-    data = request.get_json()
-    posicion_inicial = data.get('posicion_inicial')
-    velocidad_inicial = data.get('velocidad_inicial')
-    aceleracion = data.get('aceleracion')
-    posicion_final = data.get('posicion_final')
-    if None in [posicion_inicial, velocidad_inicial, aceleracion, posicion_final]:
-        return jsonify({"error": "Faltan parámetros: posicion_inicial, velocidad_inicial, aceleracion, posicion_final"}), 400
-    resultado = calcular_tiempo_posicion_velocidad_aceleracion(posicion_inicial, velocidad_inicial, aceleracion, posicion_final)
-    if resultado is None:
-        return jsonify({"error": "No hay soluciones reales para el tiempo con los parámetros dados."}), 400
-    return jsonify({"tiempo": resultado})
+@ns_ecuaciones_cinematicas.route('/desplazamiento-velocidades')
+class DesplazamientoVelocidades(Resource):
+    @ns_ecuaciones_cinematicas.expect(models['desplazamiento_velocidades_model'])
+    def post(self):
+        data = api.payload
+        velocidad_inicial = data.get('velocidad_inicial')
+        velocidad_final = data.get('velocidad_final')
+        tiempo = data.get('tiempo')
+        if None in [velocidad_inicial, velocidad_final, tiempo]:
+            return jsonify({"error": "Faltan parámetros: velocidad_inicial, velocidad_final, tiempo"}), 400
+        resultado = calcular_desplazamiento_velocidades(velocidad_inicial, velocidad_final, tiempo)
+        return jsonify({"desplazamiento": resultado})
 
-@app.route('/simulacion/ecuaciones-cinematicas/aceleracion-posicion-velocidad-tiempo', methods=['POST'])
-def api_calcular_aceleracion_posicion_velocidad_tiempo():
-    data = request.get_json()
-    posicion_inicial = data.get('posicion_inicial')
-    posicion_final = data.get('posicion_final')
-    velocidad_inicial = data.get('velocidad_inicial')
-    tiempo = data.get('tiempo')
-    if None in [posicion_inicial, posicion_final, velocidad_inicial, tiempo]:
-        return jsonify({"error": "Faltan parámetros: posicion_inicial, posicion_final, velocidad_inicial, tiempo"}), 400
-    resultado = calcular_aceleracion_posicion_velocidad_tiempo(posicion_inicial, posicion_final, velocidad_inicial, tiempo)
-    if resultado is None:
-        return jsonify({"error": "No se pudo calcular la aceleración (tiempo es cero)."}), 400
-    return jsonify({"aceleracion": resultado})
+@ns_ecuaciones_cinematicas.route('/tiempo-desplazamiento-velocidades')
+class TiempoDesplazamientoVelocidades(Resource):
+    @ns_ecuaciones_cinematicas.expect(models['tiempo_desplazamiento_velocidades_model'])
+    def post(self):
+        data = api.payload
+        desplazamiento = data.get('desplazamiento')
+        velocidad_inicial = data.get('velocidad_inicial')
+        velocidad_final = data.get('velocidad_final')
+        if None in [desplazamiento, velocidad_inicial, velocidad_final]:
+            return jsonify({"error": "Faltan parámetros: desplazamiento, velocidad_inicial, velocidad_final"}), 400
+        resultado = calcular_tiempo_desplazamiento_velocidades(desplazamiento, velocidad_inicial, velocidad_final)
+        if resultado is None:
+            return jsonify({"error": "No se pudo calcular el tiempo (posible división por cero o datos inconsistentes)."}), 400
+        return jsonify({"tiempo": resultado})
 
-@app.route('/simulacion/ecuaciones-cinematicas/posicion-final-velocidad-aceleracion', methods=['POST'])
-def api_calcular_posicion_final_velocidad_aceleracion():
-    data = request.get_json()
-    posicion_inicial = data.get('posicion_inicial')
-    velocidad_inicial = data.get('velocidad_inicial')
-    velocidad_final = data.get('velocidad_final')
-    aceleracion = data.get('aceleracion')
-    if None in [posicion_inicial, velocidad_inicial, velocidad_final, aceleracion]:
-        return jsonify({"error": "Faltan parámetros: posicion_inicial, velocidad_inicial, velocidad_final, aceleracion"}), 400
-    resultado = calcular_posicion_final_velocidad_aceleracion(posicion_inicial, velocidad_inicial, velocidad_final, aceleracion)
-    if resultado is None:
-        return jsonify({"error": "No se pudo calcular la posición final (aceleración es cero)."}), 400
-    return jsonify({"posicion_final": resultado})
+@ns_ecuaciones_cinematicas.route('/aceleracion-velocidades-tiempo')
+class AceleracionVelocidadesTiempo(Resource):
+    @ns_ecuaciones_cinematicas.expect(models['aceleracion_velocidades_tiempo_model'])
+    def post(self):
+        data = api.payload
+        velocidad_inicial = data.get('velocidad_inicial')
+        velocidad_final = data.get('velocidad_final')
+        tiempo = data.get('tiempo')
+        if None in [velocidad_inicial, velocidad_final, tiempo]:
+            return jsonify({"error": "Faltan parámetros: velocidad_inicial, velocidad_final, tiempo"}), 400
+        resultado = calcular_aceleracion_velocidades_tiempo(velocidad_inicial, velocidad_final, tiempo)
+        if resultado is None:
+            return jsonify({"error": "No se pudo calcular la aceleración (tiempo es cero)."}), 400
+        return jsonify({"aceleracion": resultado})
 
-@app.route('/simulacion/tiro-parabolico', methods=['POST'])
-def sim_tiro_parabolico():
-    data = request.get_json()
-    velocidad_inicial = data.get('velocidad_inicial')
-    angulo_lanzamiento_grados = data.get('angulo_lanzamiento_grados')
-    altura_inicial = data.get('altura_inicial', 0)
-    num_puntos = data.get('num_puntos', 10000)
-    resultado = simular_tiro_parabolico(velocidad_inicial, angulo_lanzamiento_grados, altura_inicial, num_puntos)
-    return jsonify(resultado)
+@ns_ecuaciones_cinematicas.route('/tiempo-posicion-velocidad-aceleracion')
+class TiempoPosicionVelocidadAceleracion(Resource):
+    @ns_ecuaciones_cinematicas.expect(models['tiempo_posicion_velocidad_aceleracion_model'])
+    def post(self):
+        data = api.payload
+        posicion_inicial = data.get('posicion_inicial')
+        velocidad_inicial = data.get('velocidad_inicial')
+        aceleracion = data.get('aceleracion')
+        posicion_final = data.get('posicion_final')
+        if None in [posicion_inicial, velocidad_inicial, aceleracion, posicion_final]:
+            return jsonify({"error": "Faltan parámetros: posicion_inicial, velocidad_inicial, aceleracion, posicion_final"}), 400
+        resultado = calcular_tiempo_posicion_velocidad_aceleracion(posicion_inicial, velocidad_inicial, aceleracion, posicion_final)
+        if resultado is None:
+            return jsonify({"error": "No hay soluciones reales para el tiempo con los parámetros dados."}), 400
+        return jsonify({"tiempo": resultado})
 
-@app.route('/simulacion/movimiento-circular-uniforme', methods=['POST'])
-def sim_movimiento_circular_uniforme():
-    data = request.get_json()
-    radio = data.get('radio')
-    velocidad_angular = data.get('velocidad_angular')
-    velocidad_tangencial = data.get('velocidad_tangencial')
-    tiempo_total_simulacion = data.get('tiempo_total_simulacion')
-    num_puntos = data.get('num_puntos', 10000)
-    resultado = simular_movimiento_circular_uniforme(radio, velocidad_angular, velocidad_tangencial, tiempo_total_simulacion, num_puntos)
-    return jsonify(resultado)
+@ns_ecuaciones_cinematicas.route('/aceleracion-posicion-velocidad-tiempo')
+class AceleracionPosicionVelocidadTiempo(Resource):
+    @ns_ecuaciones_cinematicas.expect(models['aceleracion_posicion_velocidad_tiempo_model'])
+    def post(self):
+        data = api.payload
+        posicion_inicial = data.get('posicion_inicial')
+        posicion_final = data.get('posicion_final')
+        velocidad_inicial = data.get('velocidad_inicial')
+        tiempo = data.get('tiempo')
+        if None in [posicion_inicial, posicion_final, velocidad_inicial, tiempo]:
+            return jsonify({"error": "Faltan parámetros: posicion_inicial, posicion_final, velocidad_inicial, tiempo"}), 400
+        resultado = calcular_aceleracion_posicion_velocidad_tiempo(posicion_inicial, posicion_final, velocidad_inicial, tiempo)
+        if resultado is None:
+            return jsonify({"error": "No se pudo calcular la aceleración (tiempo es cero)."}), 400
+        return jsonify({"aceleracion": resultado})
 
-@app.route('/simulacion/pendulo-simple', methods=['POST'])
-def sim_pendulo_simple():
-    data = request.get_json()
-    longitud = data.get('longitud')
-    angulo_inicial_grados = data.get('angulo_inicial_grados')
-    tiempo_total_simulacion = data.get('tiempo_total_simulacion')
-    num_puntos = data.get('num_puntos', 10000)
-    resultado = simular_pendulo_simple(longitud, angulo_inicial_grados, tiempo_total_simulacion=tiempo_total_simulacion, num_puntos=num_puntos)
-    return jsonify(resultado)
+@ns_ecuaciones_cinematicas.route('/posicion-final-velocidad-aceleracion')
+class PosicionFinalVelocidadAceleracion(Resource):
+    @ns_ecuaciones_cinematicas.expect(models['posicion_final_velocidad_aceleracion_model'])
+    def post(self):
+        data = api.payload
+        posicion_inicial = data.get('posicion_inicial')
+        velocidad_inicial = data.get('velocidad_inicial')
+        velocidad_final = data.get('velocidad_final')
+        aceleracion = data.get('aceleracion')
+        if None in [posicion_inicial, velocidad_inicial, velocidad_final, aceleracion]:
+            return jsonify({"error": "Faltan parámetros: posicion_inicial, velocidad_inicial, velocidad_final, aceleracion"}), 400
+        resultado = calcular_posicion_final_velocidad_aceleracion(posicion_inicial, velocidad_inicial, velocidad_final, aceleracion)
+        if resultado is None:
+            return jsonify({"error": "No se pudo calcular la posición final (aceleración es cero)."}), 400
+        return jsonify({"posicion_final": resultado})
+
+@ns_cinematica.route('/tiro-parabolico')
+class TiroParabolico(Resource):
+    @ns_cinematica.expect(models['tiro_parabolico_model'])
+    def post(self):
+        data = api.payload
+        velocidad_inicial = data.get('velocidad_inicial')
+        angulo_grados = data.get('angulo_grados')
+        altura_inicial = data.get('altura_inicial', 0)
+        tiempo_total_simulacion = data.get('tiempo_total_simulacion')
+        num_puntos = data.get('num_puntos', 10000)
+        resultado = simular_tiro_parabolico(velocidad_inicial, angulo_grados, altura_inicial, tiempo_total_simulacion, num_puntos)
+        return jsonify(resultado)
+
+@ns_cinematica.route('/movimiento-circular-uniforme')
+class MovimientoCircularUniforme(Resource):
+    @ns_cinematica.expect(models['movimiento_circular_uniforme_model'])
+    def post(self):
+        data = api.payload
+        radio = data.get('radio')
+        velocidad_angular = data.get('velocidad_angular')
+        tiempo_total_simulacion = data.get('tiempo_total_simulacion')
+        num_puntos = data.get('num_puntos', 10000)
+        resultado = simular_movimiento_circular_uniforme(radio, velocidad_angular, tiempo_total_simulacion, num_puntos)
+        return jsonify(resultado)
+
+@ns_cinematica.route('/pendulo-simple')
+class PenduloSimple(Resource):
+    @ns_cinematica.expect(models['pendulo_simple_model'])
+    def post(self):
+        data = api.payload
+        longitud = data.get('longitud')
+        angulo_inicial_grados = data.get('angulo_inicial_grados')
+        velocidad_angular_inicial = data.get('velocidad_angular_inicial', 0.0)
+        tiempo_total_simulacion = data.get('tiempo_total_simulacion')
+        num_puntos = data.get('num_puntos', 10000)
+        resultado = simular_pendulo_simple(longitud, angulo_inicial_grados, velocidad_angular_inicial, tiempo_total_simulacion, num_puntos)
+        return jsonify(resultado)
+
 
 @app.route('/simulacion/movimiento-armonico-simple', methods=['POST'])
 def sim_movimiento_armonico_simple():
@@ -729,5 +828,13 @@ def sim_plano_inclinado_polea():
     resultado = simular_plano_inclinado_polea(masa1, masa2, angulo_inclinacion_grados, coeficiente_rozamiento_cinetico, tiempo_total_simulacion, num_puntos)
     return jsonify(resultado)
 
+api.add_namespace(ns_cinematica)
+api.add_namespace(ns_colisiones)
+api.add_namespace(ns_dinamica)
+api.add_namespace(ns_energia)
+api.add_namespace(ns_electricidad_magnetismo)
+api.add_namespace(ns_ondas)
+api.add_namespace(ns_ecuaciones_cinematicas)
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host='0.0.0.0', use_reloader=False, port=5000)

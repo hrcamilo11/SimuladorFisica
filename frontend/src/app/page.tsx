@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 
 interface Simulation {
   name: string;
-  endpoint: string;
+  path: string;
 }
 
 interface SimulationCategory {
@@ -20,7 +20,8 @@ interface SimulationsData {
 }
 
 async function getSimulations(): Promise<SimulationsData> {
-  const res = await fetch('http://localhost:5000/');
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+  const res = await fetch(`${backendUrl}/`);
   if (!res.ok) {
     throw new Error('Failed to fetch simulations');
   }
@@ -66,8 +67,8 @@ export default function Home() {
                 <h3 className="text-2xl font-bold text-primary mb-4">{categoryData.category}</h3>
                 <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {categoryData.simulations.map((sim, simIndex) => (
-                    <li key={sim.endpoint || sim.name || simIndex} className="bg-card text-card-foreground shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 ease-in-out">
-                      <Link href={sim.endpoint} className="block p-6">
+                    <li key={sim.path || sim.name || simIndex} className="bg-card text-card-foreground shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 ease-in-out">
+                      <Link href={sim.path} className="block p-6">
                         <h4 className="text-xl font-semibold text-primary hover:text-black mb-2">{sim.name}</h4>
                       </Link>
                     </li>
