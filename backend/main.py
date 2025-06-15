@@ -1,7 +1,7 @@
 from flask import Flask, jsonify
 from flask_restx import Api, Resource
 from flask_restx import Api as ApiX, Namespace, fields
-from schemas import init_schemas
+from .schemas import init_schemas
 
 # Importaciones de cinemática
 from .simulations.cinematica.caida_libre import simular_caida_libre
