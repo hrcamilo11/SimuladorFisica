@@ -1,5 +1,5 @@
 import numpy as np
-from backend.Ecuaciones.cinematica.ecuaciones_cinematicas import calcular_posicion_final_tiempo, calcular_velocidad_final_tiempo
+from backend.Ecuaciones.cinematica.ecuaciones_cinematica import calcular_posicion_final_tiempo, calcular_velocidad_final_tiempo
 
 GRAVEDAD = 9.81  # m/s^2
 
