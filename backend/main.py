@@ -3,28 +3,65 @@ from flask_restx import Api, Resource
 from flask_restx import Api as ApiX, Namespace, fields
 from schemas import init_schemas
 
-# Importaciones de funciones de cálculo
-# Las importaciones de cinemática y dinámica se han eliminado ya que los archivos fuente no se encontraron.
+# Importaciones de cinemática
+from .simulations.cinematica.caida_libre import simular_caida_libre
+from .simulations.cinematica.tiro_parabolico import simular_tiro_parabolico
+from .simulations.cinematica.movimiento_circular_uniforme import simular_movimiento_circular_uniforme
+from .simulations.cinematica.pendulo import simular_pendulo_simple
+from .simulations.cinematica.movimiento_armonico_simple import simular_movimiento_armonico_simple
+from .simulations.cinematica.mru import simular_mru
+from .simulations.cinematica.mruv import simular_mruv
 
-from Formulas.colisiones import calcular_velocidades_finales_colision_elastica_1d, calcular_velocidades_finales_colision_elastica_2d, calcular_velocidades_finales_colision_elastica_3d, calcular_velocidad_final_colision_perfectamente_inelastica_1d, calcular_velocidad_final_colision_perfectamente_inelastica_2d
+# Importaciones de colisiones
+from .simulations.colisiones.colision_elastica_1d import simular_colision_elastica_1d
+from .simulations.colisiones.colision_elastica_2d import simular_colision_elastica_2d
+from .simulations.colisiones.colision_elastica_3d import simular_colision_elastica_3d
+from .simulations.colisiones.colision_perfectamente_inelastica_1d import simular_colision_perfectamente_inelastica_1d
+from .simulations.colisiones.colision_perfectamente_inelastica_2d import simular_colision_perfectamente_inelastica_2d
 
-from Formulas.energia import calcular_trabajo_energia_cinetica, calcular_energia_potencial_gravitatoria, calcular_energia_potencial_elastica
+# Importaciones de dinámica
+from .simulations.dinamica.leyes_newton import simular_leyes_newton
+from .simulations.dinamica.plano_inclinado import simular_plano_inclinado
+from .simulations.dinamica.plano_inclinado_polea import simular_plano_inclinado_polea
 
-from Formulas.electricidad_y_magnetismo import (
-    calcular_resistencia_total_serie, calcular_resistencia_total_paralelo, calcular_corriente_total, calcular_voltaje_resistor, calcular_potencia_disipada_resistor, calcular_resistencia_equivalente_serie,
-    calcular_campo_electrico_carga_puntual, calcular_fuerza_electrica_campo, calcular_campo_magnetico_solenoide, calcular_capacitancia, calcular_carga_capacitor, calcular_voltaje_capacitor, calcular_energia_capacitor,
-    calcular_fuerza_entre_conductores, calcular_inductancia, calcular_energia_inductor, calcular_fuerza_coulomb, calcular_voltaje_resistor, calcular_corriente_total, calcular_resistencia, calcular_potencia_electrica,
-    calcular_ley_kirchhoff_voltaje, calcular_ley_kirchhoff_corriente, calcular_campo_magnetico, calcular_fuerza_lorentz, calcular_flujo_magnetico, calcular_ley_faraday,
-    calcular_potencia_electrica, calcular_energia_electrica, calcular_voltaje_caida, calcular_eficiencia_electrica, calcular_potencial_electrico_carga_puntual, calcular_energia_potencial_electrica, calcular_resistencia
+# Importaciones de energía
+from .simulations.energia.trabajo_energia import simular_trabajo_energia_cinetica
+from .simulations.energia.energia_potencial_gravitatoria import simular_energia_potencial_gravitatoria
+from .simulations.energia.energia_potencial_elastica import simular_energia_potencial_elastica
+
+# Importaciones de electricidad y magnetismo
+from .simulations.electricidad_y_magnetismo.leyes_kirchhoff import simular_ley_kirchhoff_voltaje, simular_ley_kirchhoff_corriente
+from .simulations.electricidad_y_magnetismo.capacitancia import simular_capacitancia
+from .simulations.electricidad_y_magnetismo.calculos_circuitos import simular_circuito_serie, simular_circuito_paralelo
+from .simulations.electricidad_y_magnetismo.potencia_electrica import simular_potencia_electrica
+from .simulations.electricidad_y_magnetismo.inductancia import simular_inductancia
+from .simulations.electricidad_y_magnetismo.magnetismo import simular_campo_magnetico, simular_flujo_magnetico, simular_fuerza_lorentz, simular_ley_faraday
+from .simulations.electricidad_y_magnetismo.ley_ohm import simular_ley_ohm
+from .simulations.electricidad_y_magnetismo.resistencia import simular_resistencia
+
+# Importaciones de ondas
+from .simulations.ondas.ondas import simular_longitud_onda, simular_frecuencia_onda, simular_velocidad_onda
+
+# Importaciones de ecuaciones cinemáticas
+from .Ecuaciones.cinematica.ecuaciones_cinematicas import (
+    calcular_desplazamiento_velocidades,
+    calcular_velocidad_final_desplazamiento,
+    calcular_tiempo_desplazamiento_velocidades,
+    calcular_velocidad_final_tiempo,
+    calcular_posicion_final_tiempo,
+    calcular_aceleracion_velocidades_tiempo,
+    calcular_tiempo_posicion_velocidad_aceleracion,
+    calcular_posicion_final_velocidad_aceleracion
 )
-
-from Formulas.ondas import (
-    calcular_frecuencia_observada_doppler, calcular_intensidad_sonido, calcular_nivel_intensidad_sonido,
-    calcular_longitud_onda, calcular_frecuencia_onda, calcular_velocidad_onda,
-    calcular_angulo_refraccion, calcular_velocidad_onda_medio
-)
-
-
+from .Ecuaciones.colisiones.colision_elastica_1d import calcular_colision_elastica_1d
+from .Ecuaciones.colisiones.colision_elastica_2d import calcular_colision_elastica_2d
+from .Ecuaciones.colisiones.colision_elastica_3d import calcular_colision_elastica_3d
+from .Ecuaciones.colisiones.colision_perfectamente_inelastica_1d import calcular_colision_perfectamente_inelastica_1d
+from .Ecuaciones.colisiones.colision_perfectamente_inelastica_2d import calcular_colision_perfectamente_inelastica_2d
+from .Ecuaciones.energia.energia_potencial_elastica import calcular_energia_potencial_elastica
+from .Ecuaciones.energia.energia_potencial_gravitatoria import calcular_energia_potencial_gravitatoria
+from .Ecuaciones.energia.trabajo_energia import calcular_trabajo_energia_cinetica
+from .Ecuaciones.ondas.ondas import calcular_longitud_onda, calcular_frecuencia_onda, calcular_velocidad_onda
 
 app = Flask(__name__)
 api = ApiX(app, version='1.0', title='API de Simulador de Física', description='API para cálculos y simulaciones de física')

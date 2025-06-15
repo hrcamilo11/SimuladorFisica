@@ -1,0 +1,3 @@
+import numpy as np
+
+from backend.Ecuaciones.dinamica.plano_inclinado_polea import simular_plano_inclinado_polea
