@@ -24,7 +24,7 @@ def calcular_fuerzas_leyes_newton(masa, fuerza_aplicada, angulo_grados, coeficie
     if abs(fuerza_x) <= fuerza_rozamiento_estatico_max:
         aceleracion = 0.0
         fuerza_neta = 0.0
-        fuerza_rozamiento = fuerza_x # La fuerza de rozamiento iguala a la fuerza aplicada para mantener el equilibrio
+        fuerza_rozamiento = -fuerza_x # La fuerza de rozamiento se opone a la fuerza aplicada para mantener el equilibrio
     else:
         # Hay movimiento, calcular fuerza de rozamiento cinético
         fuerza_rozamiento_cinetico = coeficiente_rozamiento_cinetico * fuerza_normal
