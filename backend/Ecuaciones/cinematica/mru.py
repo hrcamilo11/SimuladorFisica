@@ -1,5 +1,5 @@
 import numpy as np
-from backend.Ecuaciones.cinematica.ecuaciones_cinematicas import calcular_posicion_final_tiempo
+from backend.Ecuaciones.cinematica.ecuaciones_cinematica import calcular_posicion_final_tiempo
 
 def calcular_mru(posicion_inicial, velocidad, tiempo_total, num_puntos=1000):
     """
