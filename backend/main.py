@@ -2,56 +2,64 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 # Importaciones de cinemática
-from simulations.cinematica.caida_libre import simular_caida_libre
-from simulations.cinematica.tiro_parabolico import simular_tiro_parabolico
-from simulations.cinematica.movimiento_circular_uniforme import simular_movimiento_circular_uniforme
-from simulations.cinematica.pendulo import simular_pendulo_simple
-from simulations.cinematica.movimiento_armonico_simple import simular_movimiento_armonico_simple
-from simulations.cinematica.mru import simular_mru
-from simulations.cinematica.mruv import simular_mruv
+from .simulations.cinematica.caida_libre import simular_caida_libre
+from .simulations.cinematica.tiro_parabolico import simular_tiro_parabolico
+from .simulations.cinematica.movimiento_circular_uniforme import simular_movimiento_circular_uniforme
+from .simulations.cinematica.pendulo import simular_pendulo_simple
+from .simulations.cinematica.movimiento_armonico_simple import simular_movimiento_armonico_simple
+from .simulations.cinematica.mru import simular_mru
+from .simulations.cinematica.mruv import simular_mruv
 
 # Importaciones de colisiones
-from simulations.colisiones.colision_elastica_1d import simular_colision_elastica_1d
-from simulations.colisiones.colision_elastica_2d import simular_colision_elastica_2d
-from simulations.colisiones.colision_elastica_3d import simular_colision_elastica_3d
-from simulations.colisiones.colision_perfectamente_inelastica_1d import simular_colision_perfectamente_inelastica_1d
-from simulations.colisiones.colision_perfectamente_inelastica_2d import simular_colision_perfectamente_inelastica_2d
+from .simulations.colisiones.colision_elastica_1d import simular_colision_elastica_1d
+from .simulations.colisiones.colision_elastica_2d import simular_colision_elastica_2d
+from .simulations.colisiones.colision_elastica_3d import simular_colision_elastica_3d
+from .simulations.colisiones.colision_perfectamente_inelastica_1d import simular_colision_perfectamente_inelastica_1d
+from .simulations.colisiones.colision_perfectamente_inelastica_2d import simular_colision_perfectamente_inelastica_2d
 
 # Importaciones de dinámica
-from simulations.dinamica.leyes_newton import simular_leyes_newton
-from simulations.dinamica.plano_inclinado import simular_plano_inclinado
-from simulations.dinamica.plano_inclinado_polea import simular_plano_inclinado_polea
+from .simulations.dinamica.leyes_newton import simular_leyes_newton
+from .simulations.dinamica.plano_inclinado import simular_plano_inclinado
+from .simulations.dinamica.plano_inclinado_polea import simular_plano_inclinado_polea
 
 # Importaciones de energía
-from simulations.energia.trabajo_energia import simular_trabajo_energia_cinetica
-from simulations.energia.energia_potencial_gravitatoria import simular_energia_potencial_gravitatoria
-from simulations.energia.energia_potencial_elastica import simular_energia_potencial_elastica
+from .simulations.energia.trabajo_energia import simular_trabajo_energia_cinetica
+from .simulations.energia.energia_potencial_gravitatoria import simular_energia_potencial_gravitatoria
+from .simulations.energia.energia_potencial_elastica import simular_energia_potencial_elastica
 
 # Importaciones de electricidad y magnetismo
-from simulations.electricidad_y_magnetismo.leyes_kirchhoff import simular_ley_kirchhoff_voltaje, simular_ley_kirchhoff_corriente
-from simulations.electricidad_y_magnetismo.capacitancia import simular_capacitancia
-from simulations.electricidad_y_magnetismo.calculos_circuitos import simular_circuito_serie, simular_circuito_paralelo
-from simulations.electricidad_y_magnetismo.potencia_electrica import simular_potencia_electrica
-from simulations.electricidad_y_magnetismo.inductancia import simular_inductancia
-from simulations.electricidad_y_magnetismo.magnetismo import simular_campo_magnetico, simular_flujo_magnetico, simular_fuerza_lorentz, simular_ley_faraday
-from simulations.electricidad_y_magnetismo.ley_ohm import simular_ley_ohm
-from simulations.electricidad_y_magnetismo.resistencia import simular_resistencia
+from .simulations.electricidad_y_magnetismo.leyes_kirchhoff import simular_ley_kirchhoff_voltaje, simular_ley_kirchhoff_corriente
+from .simulations.electricidad_y_magnetismo.capacitancia import simular_capacitancia
+from .simulations.electricidad_y_magnetismo.calculos_circuitos import simular_circuito_serie, simular_circuito_paralelo
+from .simulations.electricidad_y_magnetismo.potencia_electrica import simular_potencia_electrica
+from .simulations.electricidad_y_magnetismo.inductancia import simular_inductancia
+from .simulations.electricidad_y_magnetismo.magnetismo import simular_campo_magnetico, simular_flujo_magnetico, simular_fuerza_lorentz, simular_ley_faraday
+from .simulations.electricidad_y_magnetismo.ley_ohm import simular_ley_ohm
+from .simulations.electricidad_y_magnetismo.resistencia import simular_resistencia
 
 # Importaciones de ondas
-from simulations.ondas.ondas import simular_longitud_onda, simular_frecuencia_onda, simular_velocidad_onda
+from .simulations.ondas.ondas import simular_longitud_onda, simular_frecuencia_onda, simular_velocidad_onda
 
 # Importaciones de ecuaciones cinemáticas
-from simulations.cinematica.ecuaciones_cinematicas import (
+from .Ecuaciones.cinematica.ecuaciones_cinematicas import (
+    calcular_desplazamiento_velocidades,
+    calcular_velocidad_final_desplazamiento,
+    calcular_tiempo_desplazamiento_velocidades,
     calcular_velocidad_final_tiempo,
     calcular_posicion_final_tiempo,
-    calcular_velocidad_final_desplazamiento,
-    calcular_desplazamiento_velocidades,
-    calcular_tiempo_desplazamiento_velocidades,
     calcular_aceleracion_velocidades_tiempo,
     calcular_tiempo_posicion_velocidad_aceleracion,
-    calcular_aceleracion_posicion_velocidad_tiempo,
     calcular_posicion_final_velocidad_aceleracion
 )
+from .Ecuaciones.colisiones.colision_elastica_1d import calcular_colision_elastica_1d
+from .Ecuaciones.colisiones.colision_elastica_2d import calcular_colision_elastica_2d
+from .Ecuaciones.colisiones.colision_elastica_3d import calcular_colision_elastica_3d
+from .Ecuaciones.colisiones.colision_perfectamente_inelastica_1d import calcular_colision_perfectamente_inelastica_1d
+from .Ecuaciones.colisiones.colision_perfectamente_inelastica_2d import calcular_colision_perfectamente_inelastica_2d
+from .Ecuaciones.energia.energia_potencial_elastica import calcular_energia_potencial_elastica
+from .Ecuaciones.energia.energia_potencial_gravitatoria import calcular_energia_potencial_gravitatoria
+from .Ecuaciones.energia.trabajo_energia import calcular_trabajo_energia_cinetica
+from .Ecuaciones.ondas.ondas import calcular_longitud_onda, calcular_frecuencia_onda, calcular_velocidad_onda
 app = Flask(__name__)
 CORS(app)
 

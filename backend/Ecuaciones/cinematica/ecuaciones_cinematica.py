@@ -68,7 +68,7 @@ def calcular_tiempo_posicion_velocidad_aceleracion(posicion_inicial: float, velo
         return t if t >= 0 else None # Solo soluciones de tiempo positivo
     else:
         t1 = (-b_cuadratica + math.sqrt(discriminante)) / (2 * a_cuadratica)
-        t2 = (-b_cuadratica - math.sqrt(discriminante)) / (2 * a_cuadratica)
+        t2 = (-b_cuadratica - math.cuadratica.sqrt(discriminante)) / (2 * a_cuadratica)
         
         soluciones = []
         if t1 >= 0: soluciones.append(t1)
