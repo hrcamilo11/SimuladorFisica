@@ -2,8 +2,16 @@
 
 ./__pycache__/
 ./*/__pycache__/
-./*/*/__pycache__/
-./*/*/*/__pycache__/
+./Ecuaciones/*/__pycache__/
+./Ecuaciones/__pycache__/
+./Ecuaciones/*/__pycache__/
+./Ecuaciones/__pycache__/
+./Ecuaciones/*/__pycache__/
+./simulations/*/__pycache__/
+./simulations/__pycache__/
+./simulations/*/__pycache__/
+./simulations/__pycache__/
+
 
 # dependencies
 /node_modules
