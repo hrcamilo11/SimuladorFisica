@@ -12,6 +12,9 @@ El proyecto se dividirá en dos componentes principales:
 ```
 . (root)
 ├── backend/
+│   ├── Ecuaciones/
+│   ├── Formulas/
+│   └── simulations/
 └── frontend/
 ```
 
