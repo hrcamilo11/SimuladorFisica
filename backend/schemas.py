@@ -3,55 +3,51 @@ from flask_restx import fields, Api
 def init_schemas(api: Api):
     # Modelos de datos para Cinemática
     caida_libre_model = api.model('CaidaLibreInput', {
-        'altura_inicial': fields.Float(required=True, description='Altura inicial desde la que cae el objeto (m)'),
-        'tiempo_total_simulacion': fields.Float(required=True, description='Tiempo total de la simulación (s)'),
-        'num_puntos': fields.Integer(required=False, default=10000, description='Número de puntos de datos a generar')
+        'tipo_calculo': fields.String(required=True, description='Tipo de cálculo de caída libre (tiempo_caida, velocidad_final, altura_en_tiempo)'),
+        'altura_inicial': fields.Float(required=False, description='Altura inicial desde la que cae el objeto (m)'),
+        'tiempo': fields.Float(required=False, description='Tiempo transcurrido (s)')
     })
 
     tiro_parabolico_model = api.model('TiroParabolicoInput', {
         'velocidad_inicial': fields.Float(required=True, description='Velocidad inicial (m/s)'),
         'angulo_grados': fields.Float(required=True, description='Ángulo de lanzamiento en grados'),
         'altura_inicial': fields.Float(required=False, default=0.0, description='Altura inicial (m)'),
-        'tiempo_total_simulacion': fields.Float(required=True, description='Tiempo total de la simulación (s)'),
-        'num_puntos': fields.Integer(required=False, default=10000, description='Número de puntos de datos a generar')
+
     })
 
     movimiento_circular_uniforme_model = api.model('MovimientoCircularUniformeInput', {
         'radio': fields.Float(required=True, description='Radio de la trayectoria circular (m)'),
         'velocidad_angular': fields.Float(required=True, description='Velocidad angular (rad/s)'),
-        'tiempo_total_simulacion': fields.Float(required=True, description='Tiempo total de la simulación (s)'),
-        'num_puntos': fields.Integer(required=False, default=10000, description='Número de puntos de datos a generar')
+
     })
 
     pendulo_simple_model = api.model('PenduloSimpleInput', {
         'longitud': fields.Float(required=True, description='Longitud del péndulo (m)'),
         'angulo_inicial_grados': fields.Float(required=True, description='Ángulo inicial en grados'),
         'velocidad_angular_inicial': fields.Float(required=False, default=0.0, description='Velocidad angular inicial (rad/s)'),
-        'tiempo_total_simulacion': fields.Float(required=True, description='Tiempo total de la simulación (s)'),
-        'num_puntos': fields.Integer(required=False, default=10000, description='Número de puntos de datos a generar')
+
     })
 
     movimiento_armonico_simple_model = api.model('MovimientoArmonicoSimpleInput', {
+        'tipo_calculo': fields.String(required=True, description='Tipo de cálculo (periodo_frecuencia, posicion, velocidad, aceleracion)'),
         'amplitud': fields.Float(required=True, description='Amplitud (m)'),
         'frecuencia_angular': fields.Float(required=True, description='Frecuencia angular (rad/s)'),
         'fase_inicial': fields.Float(required=False, default=0.0, description='Fase inicial (rad)'),
-        'tiempo_total_simulacion': fields.Float(required=True, description='Tiempo total de la simulación (s)'),
-        'num_puntos': fields.Integer(required=False, default=10000, description='Número de puntos de datos a generar')
+        'tiempo': fields.Float(required=False, description='Tiempo (s)')
     })
 
     mru_model = api.model('MRUInput', {
         'posicion_inicial': fields.Float(required=True, description='Posición inicial (m)'),
         'velocidad': fields.Float(required=True, description='Velocidad constante (m/s)'),
-        'tiempo_total_simulacion': fields.Float(required=True, description='Tiempo total de la simulación (s)'),
-        'num_puntos': fields.Integer(required=False, default=10000, description='Número de puntos de datos a generar')
+
     })
 
     mruv_model = api.model('MRUVInput', {
-        'posicion_inicial': fields.Float(required=True, description='Posición inicial (m)'),
+        'tipo_calculo': fields.String(required=True, description='Tipo de cálculo (posicion, velocidad)'),
+        'posicion_inicial': fields.Float(required=False, default=0.0, description='Posición inicial (m)'),
         'velocidad_inicial': fields.Float(required=True, description='Velocidad inicial (m/s)'),
         'aceleracion': fields.Float(required=True, description='Aceleración constante (m/s^2)'),
-        'tiempo_total_simulacion': fields.Float(required=True, description='Tiempo total de la simulación (s)'),
-        'num_puntos': fields.Integer(required=False, default=10000, description='Número de puntos de datos a generar')
+        'tiempo': fields.Float(required=True, description='Tiempo transcurrido (s)')
     })
 
     # Modelos de datos para Colisiones
@@ -79,7 +75,10 @@ def init_schemas(api: Api):
         'masa2': fields.Float(required=True, description='Masa del objeto 2 (kg)'),
         'velocidad_inicial2_x': fields.Float(required=True, description='Componente X de la velocidad inicial del objeto 2 (m/s)'),
         'velocidad_inicial2_y': fields.Float(required=True, description='Componente Y de la velocidad inicial del objeto 2 (m/s)'),
-        'velocidad_inicial2_z': fields.Float(required=True, description='Componente Z de la velocidad inicial del objeto 2 (m/s)')
+        'velocidad_inicial2_z': fields.Float(required=True, description='Componente Z de la velocidad inicial del objeto 2 (m/s)'),
+        'normal_x': fields.Float(required=True, description='Componente X del vector normal a la superficie de colisión'),
+        'normal_y': fields.Float(required=True, description='Componente Y del vector normal a la superficie de colisión'),
+        'normal_z': fields.Float(required=True, description='Componente Z del vector normal a la superficie de colisión')
     })
 
     colision_perfectamente_inelastica_1d_model = api.model('ColisionPerfectamenteInelastica1DInput', {
@@ -109,14 +108,18 @@ def init_schemas(api: Api):
     plano_inclinado_model = api.model('PlanoInclinadoInput', {
         'masa': fields.Float(required=True, description='Masa del objeto (kg)'),
         'angulo_inclinacion_grados': fields.Float(required=True, description='Ángulo de inclinación del plano en grados'),
-        'coeficiente_rozamiento_cinetico': fields.Float(required=False, default=0.0, description='Coeficiente de rozamiento cinético')
+        'coeficiente_rozamiento_estatico': fields.Float(required=True, description='Coeficiente de rozamiento estático'),
+        'coeficiente_rozamiento_cinetico': fields.Float(required=True, description='Coeficiente de rozamiento cinético'),
+        'distancia_plano': fields.Float(required=True, description='Distancia del plano (m)'),
+        'velocidad_inicial': fields.Float(required=False, default=0.0, description='Velocidad inicial (m/s)')
     })
 
     plano_inclinado_polea_model = api.model('PlanoInclinadoPoleaInput', {
         'masa1': fields.Float(required=True, description='Masa del objeto en el plano (kg)'),
         'masa2': fields.Float(required=True, description='Masa del objeto colgante (kg)'),
         'angulo_inclinacion_grados': fields.Float(required=True, description='Ángulo de inclinación del plano en grados'),
-        'coeficiente_rozamiento_cinetico': fields.Float(required=False, default=0.0, description='Coeficiente de rozamiento cinético')
+        'coeficiente_rozamiento_estatico': fields.Float(required=True, description='Coeficiente de rozamiento estático'),
+        'coeficiente_rozamiento_cinetico': fields.Float(required=True, description='Coeficiente de rozamiento cinético')
     })
 
     # Modelos de datos para Energía
@@ -138,17 +141,21 @@ def init_schemas(api: Api):
 
     # Modelos de datos para Electricidad y Magnetismo
     ley_kirchhoff_voltaje_model = api.model('LeyKirchhoffVoltajeInput', {
-        'voltajes': fields.List(fields.Float, required=True, description='Lista de voltajes en el lazo (V)')
+        'tipo_calculo': fields.String(required=True, description='Tipo de cálculo de Ley de Kirchhoff de Voltaje (voltajes)'),
+        'voltajes': fields.List(fields.Float, required=False, description='Lista de voltajes en el lazo (V)')
     })
 
     ley_kirchhoff_corriente_model = api.model('LeyKirchhoffCorrienteInput', {
-        'corrientes_entrantes': fields.List(fields.Float, required=True, description='Lista de corrientes que entran al nodo (A)'),
-        'corrientes_salientes': fields.List(fields.Float, required=True, description='Lista de corrientes que salen del nodo (A)')
+        'tipo_calculo': fields.String(required=True, description='Tipo de cálculo de Ley de Kirchhoff de Corriente (corrientes)'),
+        'corrientes_entrantes': fields.List(fields.Float, required=False, description='Lista de corrientes que entran al nodo (A)'),
+        'corrientes_salientes': fields.List(fields.Float, required=False, description='Lista de corrientes que salen del nodo (A)')
     })
 
     capacitancia_model = api.model('CapacitanciaInput', {
-        'carga': fields.Float(required=True, description='Carga en el capacitor (C)'),
-        'voltaje': fields.Float(required=True, description='Voltaje a través del capacitor (V)')
+        'tipo_calculo': fields.String(required=True, description='Tipo de cálculo de capacitancia (capacitancia, carga, voltaje, energia)'),
+        'carga': fields.Float(required=False, description='Carga en el capacitor (C)'),
+        'voltaje': fields.Float(required=False, description='Voltaje a través del capacitor (V)'),
+        'capacitancia': fields.Float(required=False, description='Capacitancia (F)')
     })
 
     circuito_serie_model = api.model('CircuitoSerieInput', {
@@ -162,6 +169,14 @@ def init_schemas(api: Api):
     })
 
     potencia_electrica_model = api.model('PotenciaElectricaInput', {
+        'tipo_calculo': fields.String(required=True, description='Tipo de cálculo de potencia (ley_ohm, resistencia, voltaje)'),
+        'voltaje': fields.Float(required=False, description='Voltaje (V)'),
+        'corriente': fields.Float(required=False, description='Corriente (A)'),
+        'resistencia': fields.Float(required=False, description='Resistencia (Ohms)')
+    })
+
+    ley_ohm_model = api.model('LeyOhmInput', {
+        'tipo_calculo': fields.String(required=True, description='Tipo de cálculo (voltaje, corriente, resistencia)'),
         'voltaje': fields.Float(required=False, description='Voltaje (V)'),
         'corriente': fields.Float(required=False, description='Corriente (A)'),
         'resistencia': fields.Float(required=False, description='Resistencia (Ohms)')
@@ -169,6 +184,12 @@ def init_schemas(api: Api):
 
     inductancia_model = api.model('InductanciaInput', {
         'flujo_magnetico': fields.Float(required=True, description='Flujo magnético (Weber)'),
+        'corriente': fields.Float(required=True, description='Corriente (A)'),
+        'numero_espiras': fields.Integer(required=True, description='Número de espiras')
+    })
+
+    energia_inductor_model = api.model('EnergiaInductorInput', {
+        'inductancia': fields.Float(required=True, description='Inductancia (H)'),
         'corriente': fields.Float(required=True, description='Corriente (A)')
     })
 
@@ -183,6 +204,16 @@ def init_schemas(api: Api):
         'angulo_grados': fields.Float(required=True, description='Ángulo entre el campo y la normal al área en grados')
     })
 
+    fuerza_magnetica_model = api.model('FuerzaMagneticaInput', {
+        'tipo_calculo': fields.String(required=True, description='Tipo de cálculo de fuerza magnética (conductor, carga_movil)'),
+        'corriente': fields.Float(required=False, description='Corriente en el conductor (A)'),
+        'longitud': fields.Float(required=False, description='Longitud del conductor (m)'),
+        'campo_magnetico': fields.Float(required=False, description='Campo magnético (T)'),
+        'angulo_grados': fields.Float(required=False, description='Ángulo entre la corriente y el campo magnético en grados'),
+        'carga': fields.Float(required=False, description='Carga de la partícula (C)'),
+        'velocidad': fields.Float(required=False, description='Velocidad de la partícula (m/s)')
+    })
+
     fuerza_lorentz_model = api.model('FuerzaLorentzInput', {
         'carga': fields.Float(required=True, description='Carga de la partícula (C)'),
         'velocidad': fields.Float(required=True, description='Velocidad de la partícula (m/s)'),
@@ -191,8 +222,23 @@ def init_schemas(api: Api):
     })
 
     ley_faraday_model = api.model('LeyFaradayInput', {
-        'cambio_flujo_magnetico': fields.Float(required=True, description='Cambio en el flujo magnético (Weber)'),
-        'cambio_tiempo': fields.Float(required=True, description='Cambio en el tiempo (s)')
+        'cambio_flujo_magnetico': fields.Float(required=False, description='Cambio en el flujo magnético (Weber)'),
+        'cambio_tiempo': fields.Float(required=False, description='Cambio en el tiempo (s)'),
+        'num_espiras': fields.Integer(required=False, description='Número de espiras')
+    })
+
+    magnetismo_model = api.model('MagnetismoInput', {
+        'tipo_calculo': fields.String(required=True, description='Tipo de cálculo de magnetismo (campo_magnetico, flujo_magnetico, fuerza_lorentz, ley_faraday)'),
+        'corriente': fields.Float(required=False, description='Corriente (A) para campo magnético'),
+        'distancia': fields.Float(required=False, description='Distancia (m) para campo magnético'),
+        'campo_magnetico': fields.Float(required=False, description='Campo magnético (T) para flujo magnético y fuerza de Lorentz'),
+        'area': fields.Float(required=False, description='Área (m^2) para flujo magnético'),
+        'angulo': fields.Float(required=False, description='Ángulo (grados) para flujo magnético y fuerza de Lorentz'),
+        'carga': fields.Float(required=False, description='Carga (C) para fuerza de Lorentz'),
+        'velocidad': fields.Float(required=False, description='Velocidad (m/s) para fuerza de Lorentz'),
+        'num_espiras': fields.Integer(required=False, description='Número de espiras para ley de Faraday'),
+        'cambio_flujo': fields.Float(required=False, description='Cambio de flujo (Weber) para ley de Faraday'),
+        'cambio_tiempo': fields.Float(required=False, description='Cambio de tiempo (s) para ley de Faraday')
     })
 
     ley_ohm_model = api.model('LeyOhmInput', {
@@ -201,10 +247,43 @@ def init_schemas(api: Api):
         'resistencia': fields.Float(required=False, description='Resistencia (Ohms)')
     })
 
+    ondas_mecanicas_model = api.model('OndasMecanicasInput', {
+        'tipo_calculo': fields.String(required=True, description='Tipo de cálculo de ondas mecánicas (velocidad_onda, frecuencia_onda, longitud_onda, periodo_onda, velocidad_cuerda)'),
+        'velocidad': fields.Float(required=False, description='Velocidad de la onda (m/s)'),
+        'frecuencia': fields.Float(required=False, description='Frecuencia de la onda (Hz)'),
+        'longitud_onda': fields.Float(required=False, description='Longitud de onda (m)'),
+        'periodo': fields.Float(required=False, description='Período de la onda (s)'),
+        'tension': fields.Float(required=False, description='Tensión en la cuerda (N)'),
+        'densidad_lineal': fields.Float(required=False, description='Densidad lineal de la cuerda (kg/m)')
+    })
+
     resistencia_model = api.model('ResistenciaInput', {
-        'resistividad': fields.Float(required=True, description='Resistividad del material (Ohm*m)'),
-        'longitud': fields.Float(required=True, description='Longitud del conductor (m)'),
-        'area_seccion_transversal': fields.Float(required=True, description='Área de la sección transversal (m^2)')
+        'tipo_calculo': fields.String(required=True, description='Tipo de cálculo de resistencia (ley_ohm, material)'),
+        'voltaje': fields.Float(required=False, description='Voltaje (V)'),
+        'corriente': fields.Float(required=False, description='Corriente (A)'),
+        'resistividad': fields.Float(required=False, description='Resistividad del material (Ohm*m)'),
+        'longitud': fields.Float(required=False, description='Longitud del conductor (m)'),
+        'area': fields.Float(required=False, description='Área de la sección transversal del conductor (m^2)')
+    })
+
+    ley_gauss_model = api.model('LeyGaussInput', {
+        'tipo_calculo': fields.String(required=True, description='Tipo de cálculo de Ley de Gauss (flujo_electrico_carga, flujo_electrico_campo_area)'),
+        'carga_encerrada': fields.Float(required=False, description='Carga encerrada (C)'),
+        'campo_electrico': fields.Float(required=False, description='Campo eléctrico (N/C)'),
+        'area': fields.Float(required=False, description='Área (m^2)'),
+        'angulo': fields.Float(required=False, description='Ángulo entre el campo eléctrico y la normal a la superficie en grados')
+    })
+
+    potencial_electrico_model = api.model('PotencialElectricoInput', {
+        'tipo_calculo': fields.String(required=True, description='Tipo de cálculo de potencial eléctrico (punto, distribucion_lineal, distribucion_superficial, distribucion_volumetrica)'),
+        'carga': fields.Float(required=False, description='Carga puntual (C)'),
+        'distancia': fields.Float(required=False, description='Distancia desde la carga (m)'),
+        'densidad_lineal_carga': fields.Float(required=False, description='Densidad de carga lineal (C/m)'),
+        'longitud': fields.Float(required=False, description='Longitud de la distribución lineal (m)'),
+        'densidad_superficial_carga': fields.Float(required=False, description='Densidad de carga superficial (C/m^2)'),
+        'area': fields.Float(required=False, description='Área de la distribución superficial (m^2)'),
+        'densidad_volumetrica_carga': fields.Float(required=False, description='Densidad de carga volumétrica (C/m^3)'),
+        'volumen': fields.Float(required=False, description='Volumen de la distribución volumétrica (m^3)')
     })
 
     # Modelos de datos para Ondas
@@ -310,10 +389,15 @@ def init_schemas(api: Api):
         'inductancia_model': inductancia_model,
         'campo_magnetico_model': campo_magnetico_model,
         'flujo_magnetico_model': flujo_magnetico_model,
+        'fuerza_magnetica_model': fuerza_magnetica_model,
         'fuerza_lorentz_model': fuerza_lorentz_model,
         'ley_faraday_model': ley_faraday_model,
+        'magnetismo_model': magnetismo_model,
         'ley_ohm_model': ley_ohm_model,
+        'ondas_mecanicas_model': ondas_mecanicas_model,
         'resistencia_model': resistencia_model,
+        'ley_gauss_model': ley_gauss_model,
+        'potencial_electrico_model': potencial_electrico_model,
         'longitud_onda_model': longitud_onda_model,
         'frecuencia_onda_model': frecuencia_onda_model,
         'velocidad_onda_model': velocidad_onda_model,
@@ -325,5 +409,5 @@ def init_schemas(api: Api):
         'aceleracion_velocidades_tiempo_model': aceleracion_velocidades_tiempo_model,
         'tiempo_posicion_velocidad_aceleracion_model': tiempo_posicion_velocidad_aceleracion_model,
         'aceleracion_posicion_velocidad_tiempo_model': aceleracion_posicion_velocidad_tiempo_model,
-        'posicion_final_velocidad_aceleracion_model': posicion_final_velocidad_aceleracion_model
+        'posicion_final_velocidad_aceleracion_model': posicion_final_velocidad_aceleracion_model,
     }
