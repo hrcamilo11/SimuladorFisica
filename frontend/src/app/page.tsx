@@ -21,57 +21,44 @@ interface SimulationsData {
 
 async function getSimulations(): Promise<SimulationsData> {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
-  const res = await fetch(`${backendUrl}/swagger.json`);
+  const res = await fetch(`${backendUrl}/`);
   if (!res.ok) {
     throw new Error('Failed to fetch simulations');
   }
-  const swaggerData = await res.json();
+  const data = await res.json();
 
-  const categories = new Map<string, Simulation[]>();
+  // Assuming the backend returns data in the format: { message: string, simulations: [{ name: string, path: string }] }
+  // We need to group them by category as per the SimulationCategory interface
+  const categoriesMap = new Map<string, Simulation[]>();
 
-  Object.keys(swaggerData.paths).forEach(path => {
-    // Expected format: /Category/simulation-name
-    const parts = path.split('/').filter(part => part !== '');
+  if (data.simulations && Array.isArray(data.simulations)) {
+    data.simulations.forEach((cat: { name: string; path: string; }) => {
+      // The path from backend is like /cinematica, /colisiones, etc.
+      // We need to fetch the simulations for each category.
+      // For now, we'll just use the category name as is.
+      const categoryName = cat.name;
+      const categoryPath = cat.path;
 
-    // Ensure path has at least two parts (category and simulation name)
-    if (parts.length < 2) {
-      console.warn(`Skipping malformed path: ${path}`);
-      return;
-    }
+      // For now, we'll just list the categories themselves as simulations
+      // In a real scenario, we'd make another fetch to categoryPath to get its simulations
+      // For this task, we'll just display the main categories.
+      if (!categoriesMap.has(categoryName)) {
+        categoriesMap.set(categoryName, []);
+      }
+      categoriesMap.get(categoryName)?.push({ name: categoryName, path: categoryPath });
+    });
+  }
 
-    const [categoryRaw, simulationNameRaw] = parts;
-
-    // Format category: capitalize first letter
-    const category = categoryRaw.charAt(0).toUpperCase() + categoryRaw.slice(1);
-
-    // Format simulation name: replace hyphens with spaces and capitalize each word
-    const simulationName = simulationNameRaw.split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-
-    const simulation: Simulation = {
-      name: simulationName,
-      path: path,
-    };
-
-    if (!categories.has(category)) {
-      categories.set(category, []);
-    }
-    categories.get(category)?.push(simulation);
-  });
-
-  // Convert Map to SimulationsData format
-  const available_simulations: SimulationCategory[] = Array.from(categories.entries())
+  const available_simulations: SimulationCategory[] = Array.from(categoriesMap.entries())
     .map(([category, simulations]) => ({
       category,
-      simulations: simulations.sort((a, b) => a.name.localeCompare(b.name)), // Sort simulations alphabetically
+      simulations: simulations.sort((a, b) => a.name.localeCompare(b.name)),
     }));
 
-  // Sort categories alphabetically
   available_simulations.sort((a, b) => a.category.localeCompare(b.category));
 
   return {
-    message: 'Simulations loaded successfully',
+    message: data.message || 'Simulations loaded successfully',
     available_simulations,
   };
 }

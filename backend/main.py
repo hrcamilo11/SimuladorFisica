@@ -1,6 +1,7 @@
-from flask import Flask, jsonify
+from flask import Flask
+from .routes.home import home_bp
 from flask_restx import Api, Resource
-from flask_restx import Api as ApiX, Namespace, fields
+from flask_restx import Api, Namespace, fields
 from flask_cors import CORS
 from .schemas import init_schemas
 
@@ -66,18 +67,33 @@ from .Ecuaciones.ondas.ondas import calcular_longitud_onda, calcular_frecuencia_
 
 app = Flask(__name__)
 CORS(app) # Enable CORS for all origins
-api = ApiX(app, version='1.0', title='API de Simulador de Física', description='API para cálculos y simulaciones de física')
+
+app.register_blueprint(home_bp)
+
+api = Api(app, version='1.0', title='API de Simulador de Física', description='API para cálculos y simulaciones de física', doc='/swagger')
 
 # Inicializar esquemas de modelos
 models = init_schemas(api)
 
 # Namespaces para organizar la API
+
 ns_cinematica = api.namespace('cinematica', description='Operaciones relacionadas con Cinemática')
 ns_colisiones = api.namespace('colisiones', description='Operaciones relacionadas con Colisiones')
 ns_dinamica = api.namespace('dinamica', description='Operaciones relacionadas con Dinámica')
 ns_energia = api.namespace('energia', description='Operaciones relacionadas con Energía')
 ns_electricidad_magnetismo = api.namespace('electricidad-magnetismo', description='Operaciones relacionadas con Electricidad y Magnetismo')
 ns_ondas = api.namespace('ondas', description='Operaciones relacionadas con Ondas')
+
+
+
+# Registrar los namespaces
+api.add_namespace(ns_cinematica)
+api.add_namespace(ns_colisiones)
+api.add_namespace(ns_dinamica)
+api.add_namespace(ns_energia)
+api.add_namespace(ns_electricidad_magnetismo)
+api.add_namespace(ns_ondas)
+
 
 
 
@@ -1846,3 +1862,4 @@ class OndasMecanicas(Resource):
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='0.0.0.0')
+    print("Swagger UI disponible en: http://localhost:5000/swagger")
