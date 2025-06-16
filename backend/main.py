@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 from flask_restx import Api, Resource
 from flask_restx import Api as ApiX, Namespace, fields
+from flask_cors import CORS
 from .schemas import init_schemas
 
 # Importaciones de cinemática
@@ -64,6 +65,7 @@ from .Ecuaciones.energia.trabajo_energia import calcular_trabajo_energia_cinetic
 from .Ecuaciones.ondas.ondas import calcular_longitud_onda, calcular_frecuencia_onda, calcular_velocidad_onda
 
 app = Flask(__name__)
+CORS(app) # Enable CORS for all origins
 api = ApiX(app, version='1.0', title='API de Simulador de Física', description='API para cálculos y simulaciones de física')
 
 # Inicializar esquemas de modelos
@@ -1843,4 +1845,4 @@ class OndasMecanicas(Resource):
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000, host='0.0.0.0')

@@ -21,11 +21,59 @@ interface SimulationsData {
 
 async function getSimulations(): Promise<SimulationsData> {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
-  const res = await fetch(`${backendUrl}/`);
+  const res = await fetch(`${backendUrl}/swagger.json`);
   if (!res.ok) {
     throw new Error('Failed to fetch simulations');
   }
-  return res.json();
+  const swaggerData = await res.json();
+
+  const categories = new Map<string, Simulation[]>();
+
+  Object.keys(swaggerData.paths).forEach(path => {
+    // Expected format: /Category/simulation-name
+    const parts = path.split('/').filter(part => part !== '');
+
+    // Ensure path has at least two parts (category and simulation name)
+    if (parts.length < 2) {
+      console.warn(`Skipping malformed path: ${path}`);
+      return;
+    }
+
+    const [categoryRaw, simulationNameRaw] = parts;
+
+    // Format category: capitalize first letter
+    const category = categoryRaw.charAt(0).toUpperCase() + categoryRaw.slice(1);
+
+    // Format simulation name: replace hyphens with spaces and capitalize each word
+    const simulationName = simulationNameRaw.split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+
+    const simulation: Simulation = {
+      name: simulationName,
+      path: path,
+    };
+
+    if (!categories.has(category)) {
+      categories.set(category, []);
+    }
+    categories.get(category)?.push(simulation);
+  });
+
+  // Convert Map to SimulationsData format
+  const available_simulations: SimulationCategory[] = Array.from(categories.entries())
+    .map(([category, simulations]) => ({
+      category,
+      simulations: simulations.sort((a, b) => a.name.localeCompare(b.name)), // Sort simulations alphabetically
+    }));
+
+  // Sort categories alphabetically
+  available_simulations.sort((a, b) => a.category.localeCompare(b.category));
+
+  return {
+    message: 'Simulations loaded successfully',
+    available_simulations,
+  };
 }
 
 export default function Home() {
