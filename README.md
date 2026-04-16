@@ -1,71 +1,36 @@
-# Simulador de Física Mecánica
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Este proyecto tiene como objetivo crear un simulador interactivo para la clase de física mecánica, permitiendo a los usuarios simular diversos escenarios como caída libre, tiro parabólico, planos inclinados y colisiones.
+## Getting Started
 
-## Estructura del Proyecto
-
-El proyecto se dividirá en dos componentes principales:
-
-- **Backend (Python):** Encargado de la lógica de las simulaciones, cálculos físicos y provisión de una API para el frontend.
-- **Frontend (Next.js):** Responsable de la interfaz de usuario, visualización de las simulaciones y animaciones.
-
-```
-. (root)
-├── backend/
-│   ├── Ecuaciones/
-│   ├── Formulas/
-│   └── simulations/
-└── frontend/
-```
-
-## Configuración Inicial
-
-### Backend (Python)
-
-1. Navega al directorio `backend`:
-   Para instrucciones detalladas sobre cómo configurar y ejecutar cada componente, consulta los archivos `README.md` dentro de los directorios `backend/` y `frontend/` respectivamente.
-
-## Ejecutar Ambos Componentes
-
-Para iniciar tanto el backend como el frontend simultáneamente, puedes usar el script `start_all.bat` (solo para Windows):
+First, run the development server:
 
 ```bash
-start_all.bat
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-## Simulaciones Disponibles
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-El simulador incluye las siguientes simulaciones físicas:
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
--   Caída Libre
--   Tiro Parabólico
--   Movimiento Rectilíneo Uniforme (MRU)
--   Movimiento Rectilíneo Uniformemente Variado (MRUV)
--   Colisión Elástica 1D, 2D y 3D
--   Colisión Inelástica 1D, 2D y 3D
--   Péndulo Simple
--   Trabajo y Energía Cinética
--   Energía Potencial Gravitatoria y Conservación de Energía Mecánica
--   Energía Potencial Elástica y Conservación (Sistema Masa-Resorte)
--   Fuerzas y Leyes de Newton (2da Ley)
--   Plano Inclinado con Polea (en desarrollo)
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-Cada simulación permite:
+## Learn More
 
--   Ingresar parámetros iniciales.
--   Visualizar las fórmulas físicas aplicadas.
--   Obtener resultados detallados de la simulación.
+To learn more about Next.js, take a look at the following resources:
 
-## Verificación de Funcionalidades
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-Para verificar que las funcionalidades actuales están operativas, sigue estos pasos:
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-1.  Asegúrate de que tanto el backend como el frontend estén corriendo. Puedes usar `start_all.bat`.
-2.  Navega a la simulación específica en el frontend (ej. `http://localhost:3001/simulacion/plano-inclinado-polea`).
-3.  Ingresa los parámetros requeridos y haz clic en el botón de simular.
-4.  Abre la consola del navegador (F12) y verifica los logs para:
-    -   `Raw simulation data from backend:`: Para confirmar que los datos se reciben del backend.
-    -   `Simulation data after setting state:`: Para ver el estado de los datos de simulación en el frontend.
-    -   `isChartableSimulation:`: Para verificar si la simulación es chartable.
-    -   `Formatted chart data:`: Para ver los datos formateados para la gráfica/animación.
-    -   Logs de `useEffect` y `onUpdate` para la animación: Para depurar el movimiento de los elementos SVG (`mass1Ref`, `mass2Ref`).
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
