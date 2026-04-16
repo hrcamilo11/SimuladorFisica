@@ -20,7 +20,7 @@ interface SimulationsData {
 }
 
 async function getSimulations(): Promise<SimulationsData> {
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const res = await fetch(`${backendUrl}/`);
   if (!res.ok) {
     throw new Error('Failed to fetch simulations');
@@ -74,7 +74,7 @@ export default function Home() {
       })
       .catch(err => {
         console.error(err);
-        setError('No se pudo cargar la lista de simulaciones. Asegúrate de que el servidor backend esté en ejecución en http://localhost:5000.');
+        setError('No se pudo cargar la lista de simulaciones. Asegúrate de que el servidor backend esté en ejecución.');
       });
   }, []);
 

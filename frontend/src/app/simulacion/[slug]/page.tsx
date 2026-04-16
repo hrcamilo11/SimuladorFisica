@@ -307,7 +307,8 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/${slug.includes('cinematica') || slug.includes('colisiones') || slug.includes('dinamica') || slug.includes('energia') || slug.includes('electricidad-y-magnetismo') || slug.includes('ondas') || slug.includes('ecuaciones-cinematicas') ? slug.split('-')[0] : 'simulacion'}/${slug}`,
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const response = await fetch(`${backendUrl}/${slug.includes('cinematica') || slug.includes('colisiones') || slug.includes('dinamica') || slug.includes('energia') || slug.includes('electricidad-y-magnetismo') || slug.includes('ondas') || slug.includes('ecuaciones-cinematicas') ? slug.split('-')[0] : 'simulacion'}/${slug}`,
         {
           method: 'POST',
           headers: {
