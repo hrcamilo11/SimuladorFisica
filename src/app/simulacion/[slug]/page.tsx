@@ -394,7 +394,8 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
             <ul className="list-disc list-inside text-left">
               {formulas.map((formula, index) => (
                 <li key={index} className="mb-2 text-lg">
-                  {formula.toString()}
+                  <code className="font-mono text-primary">{formula.formula}</code>
+                  <span className="text-muted-foreground ml-2">— {formula.description}</span>
                 </li>
               ))}
             </ul>
@@ -502,7 +503,10 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
                 <h2 className="text-2xl font-bold mb-4 text-center text-gray-600 dark:text-gray-300">Fórmulas Utilizadas</h2>
                 <ul className="list-disc list-inside text-muted-foreground">
                   {getFormulasForSimulation(slug).map((formula, index) => (
-                    <li key={index}>{formula.toString()}</li>
+                    <li key={index}>
+                      <code className="font-mono text-primary">{formula.formula}</code>
+                      <span className="ml-2">— {formula.description}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
