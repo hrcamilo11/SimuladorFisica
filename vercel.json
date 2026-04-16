@@ -7,6 +7,10 @@
   },
   "rewrites": [
     {
+      "source": "/api",
+      "destination": "backend/main.py"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "backend/main.py"
     }

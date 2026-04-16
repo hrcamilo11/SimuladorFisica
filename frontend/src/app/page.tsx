@@ -21,7 +21,8 @@ interface SimulationsData {
 
 async function getSimulations(): Promise<SimulationsData> {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-  const res = await fetch(`${backendUrl}/`);
+  const fetchUrl = backendUrl ? (backendUrl.endsWith('/') ? backendUrl : `${backendUrl}/`) : '/';
+  const res = await fetch(fetchUrl);
   if (!res.ok) {
     const errorText = await res.text().catch(() => 'No error body');
     console.error(`Fetch failed with status ${res.status}: ${errorText}`);

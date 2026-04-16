@@ -86,6 +86,19 @@ api = Api(app, version='1.0', title='API de Simulador de Física', description='
 # Inicializar esquemas de modelos
 models = init_schemas(api)
 
+# Middleware para manejar el prefijo /api si Vercel lo pasa
+class PrefixMiddleware(object):
+    def __init__(self, app, prefix=''):
+        self.app = app
+        self.prefix = prefix
+    def __call__(self, environ, start_response):
+        if environ['PATH_INFO'].startswith(self.prefix):
+            environ['PATH_INFO'] = environ['PATH_INFO'][len(self.prefix):]
+            environ['SCRIPT_NAME'] = self.prefix
+        return self.app(environ, start_response)
+
+app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix='/api')
+
 # Namespaces para organizar la API
 
 ns_cinematica = api.namespace('cinematica', description='Operaciones relacionadas con Cinemática')
