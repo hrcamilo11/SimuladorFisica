@@ -1,4 +1,10 @@
 from flask import Flask, jsonify, request
+import os
+import sys
+
+# Añadir el directorio actual al path para que funcionen los imports absolutos en Vercel y local
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from routes.home import home_bp
 from flask_restx import Api, Resource
 from flask_restx import Api, Namespace, fields

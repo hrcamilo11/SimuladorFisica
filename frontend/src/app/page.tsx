@@ -27,33 +27,21 @@ async function getSimulations(): Promise<SimulationsData> {
   }
   const data = await res.json();
 
-  // Assuming the backend returns data in the format: { message: string, simulations: [{ name: string, path: string }] }
-  // We need to group them by category as per the SimulationCategory interface
-  const categoriesMap = new Map<string, Simulation[]>();
+  const available_simulations: SimulationCategory[] = [];
 
-  if (data.simulations && Array.isArray(data.simulations)) {
-    data.simulations.forEach((cat: { name: string; path: string; }) => {
-      // The path from backend is like /cinematica, /colisiones, etc.
-      // We need to fetch the simulations for each category.
-      // For now, we'll just use the category name as is.
-      const categoryName = cat.name;
-      const categoryPath = cat.path;
+  if (data.categories && Array.isArray(data.categories)) {
+    data.categories.forEach((cat: { name: string; path: string; simulations: string[] }) => {
+      const simulations: Simulation[] = cat.simulations.map(simSlug => ({
+        name: simSlug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+        path: `/simulacion/${simSlug}`
+      }));
 
-      // For now, we'll just list the categories themselves as simulations
-      // In a real scenario, we'd make another fetch to categoryPath to get its simulations
-      // For this task, we'll just display the main categories.
-      if (!categoriesMap.has(categoryName)) {
-        categoriesMap.set(categoryName, []);
-      }
-      categoriesMap.get(categoryName)?.push({ name: categoryName, path: categoryPath });
+      available_simulations.push({
+        category: cat.name,
+        simulations: simulations.sort((a, b) => a.name.localeCompare(b.name)),
+      });
     });
   }
-
-  const available_simulations: SimulationCategory[] = Array.from(categoriesMap.entries())
-    .map(([category, simulations]) => ({
-      category,
-      simulations: simulations.sort((a, b) => a.name.localeCompare(b.name)),
-    }));
 
   available_simulations.sort((a, b) => a.category.localeCompare(b.category));
 
