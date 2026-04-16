@@ -1,6 +1,7 @@
-# Dependencias del backend de Python
-# Agrega aquí tus dependencias, por ejemplo:
-flask
-numpy
-flask-cors
-flask-restx
+flask==2.3.3
+Werkzeug==2.3.7
+flask-cors==4.0.0
+flask-restx==1.1.0
+numpy==1.26.4
+aniso8601==9.0.1
+jsonschema==4.19.1

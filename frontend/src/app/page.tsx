@@ -23,7 +23,9 @@ async function getSimulations(): Promise<SimulationsData> {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const res = await fetch(`${backendUrl}/`);
   if (!res.ok) {
-    throw new Error('Failed to fetch simulations');
+    const errorText = await res.text().catch(() => 'No error body');
+    console.error(`Fetch failed with status ${res.status}: ${errorText}`);
+    throw new Error(`Failed to fetch simulations (Status ${res.status})`);
   }
   const data = await res.json();
 

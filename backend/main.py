@@ -74,6 +74,11 @@ from Ecuaciones.ondas.ondas import calcular_longitud_onda, calcular_frecuencia_o
 app = Flask(__name__)
 CORS(app) # Enable CORS for all origins
 
+@app.before_request
+def log_request_info():
+    app.logger.debug('Path: %s', request.path)
+    app.logger.debug('Raw Path: %s', request.environ.get('PATH_INFO'))
+
 app.register_blueprint(home_bp)
 
 api = Api(app, version='1.0', title='API de Simulador de Física', description='API para cálculos y simulaciones de física', doc='/swagger')
