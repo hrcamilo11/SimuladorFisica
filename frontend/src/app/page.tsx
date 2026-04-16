@@ -20,12 +20,8 @@ interface SimulationsData {
 }
 
 async function getSimulations(): Promise<SimulationsData> {
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-  const fetchUrl = backendUrl ? (backendUrl.endsWith('/') ? backendUrl : `${backendUrl}/`) : '/';
-  const res = await fetch(fetchUrl);
+  const res = await fetch('/api');
   if (!res.ok) {
-    const errorText = await res.text().catch(() => 'No error body');
-    console.error(`Fetch failed with status ${res.status}: ${errorText}`);
     throw new Error(`Failed to fetch simulations (Status ${res.status})`);
   }
   const data = await res.json();

@@ -307,8 +307,21 @@ const SimulationPage = ({ params }: SimulationPageProps) => {
     }
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-      const response = await fetch(`${backendUrl}/${slug.includes('cinematica') || slug.includes('colisiones') || slug.includes('dinamica') || slug.includes('energia') || slug.includes('electricidad-y-magnetismo') || slug.includes('ondas') || slug.includes('ecuaciones-cinematicas') ? slug.split('-')[0] : 'simulacion'}/${slug}`,
+      // Find the category based on the slug to route it to the correct Next.js API
+      let category = 'cinematica'; // default for our current implemented ones
+      const colisiones = ['colision-perfectamente-inelastica-1d', 'colision-elastica-1d', 'colision-perfectamente-inelastica-2d', 'colision-elastica-3d', 'colision-elastica-2d'];
+      const dinamica = ['plano-inclinado', 'leyes-newton', 'plano-inclinado-polea'];
+      const energia = ['energia-potencial-gravitatoria', 'energia-potencial-elastica', 'trabajo-energia'];
+      const magnetismo = ['resistencia', 'leyes-kirchhoff', 'potencia-electrica', 'calculos-circuitos', 'magnetismo', 'inductancia', 'capacitancia', 'ley-ohm'];
+      const ondas = ['ondas'];
+
+      if (colisiones.includes(slug)) category = 'colisiones';
+      if (dinamica.includes(slug)) category = 'dinamica';
+      if (energia.includes(slug)) category = 'energia';
+      if (magnetismo.includes(slug)) category = 'electricidad-y-magnetismo';
+      if (ondas.includes(slug)) category = 'ondas';
+
+      const response = await fetch(`/api/${category}/${slug}`,
         {
           method: 'POST',
           headers: {
