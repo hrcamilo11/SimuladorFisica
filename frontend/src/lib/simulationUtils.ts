@@ -81,11 +81,11 @@ export const isChartableSimulation = (simSlug: string): boolean => {
 export const formatDataForChart = (simulationData: { resultados: SimulationResult }, simSlug: string): ChartDataPoint[] => {
   const resultados = simulationData.resultados;
   if (resultados.estados_simulacion && resultados.estados_simulacion.length > 0) {
-    return resultados.estados_simulacion.map((estado: any) => {
-      const chartPoint: ChartDataPoint = { tiempo: estado.tiempo };
+    return resultados.estados_simulacion.map((estado: Record<string, unknown>) => {
+      const chartPoint: ChartDataPoint = { tiempo: estado.tiempo as number };
       for (const key in estado) {
-        if (key !== 'tiempo') {
-          chartPoint[key] = estado[key];
+        if (key !== 'tiempo' && typeof estado[key] === 'number') {
+          chartPoint[key] = estado[key] as number;
         }
       }
       return chartPoint;

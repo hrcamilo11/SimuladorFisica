@@ -1,9 +1,9 @@
 export interface SimulationParams {
-  [key: string]: any;
+  [key: string]: number | undefined;
 }
 
 export interface SimulationResult {
-  [key: string]: any;
+  [key: string]: number | number[] | Record<string, unknown>[] | undefined;
   tiempos?: number[];
   posiciones?: number[];
   alturas?: number[];
@@ -13,7 +13,11 @@ export interface SimulationResult {
   angulos?: number[];
   velocidades_x?: number[];
   velocidades_y?: number[];
+  aceleraciones_x?: number[];
+  aceleraciones_y?: number[];
   aceleraciones?: number[];
+  fuerzas?: number[];
+  energias_potenciales_elasticas?: number[];
   energias_potenciales?: number[];
   energias_cineticas?: number[];
   energias_totales?: number[];
@@ -22,7 +26,7 @@ export interface SimulationResult {
   aceleraciones_angular?: number[];
   posiciones_x_cartesianas?: number[];
   posiciones_y_cartesianas?: number[];
-  estados_simulacion?: any[];
+  estados_simulacion?: Record<string, unknown>[];
 }
 
 export interface ChartDataPoint {
@@ -42,6 +46,7 @@ export interface ParamDefinition {
   name: string;
   label: string;
   unit?: string;
+  defaultValue?: number;
 }
 
 export interface Formula {

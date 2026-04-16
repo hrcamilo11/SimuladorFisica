@@ -1,22 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useRef } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { use, useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { gsap } from 'gsap';
-import { SimulationParams, SimulationResult, ChartDataPoint, SimulationData, SimulationPageProps } from '@/types/simulation';
-import { getFormulasForSimulation, isChartableSimulation, formatDataForChart, getExpectedParamsForSimulation, getOptionalParamsForSimulation, shouldDisplayChart } from '@/lib/simulationUtils';
+import { SimulationParams, SimulationData, SimulationPageProps } from '@/types/simulation';
+import { getFormulasForSimulation, getExpectedParamsForSimulation } from '@/lib/simulationUtils';
 
-
-const SimulationPage = async ({ params }: SimulationPageProps) => {
-const slug = (await params).slug as string;
+const SimulationPage = ({ params }: SimulationPageProps) => {
+  const { slug } = use(params);
   const [simulationData, setSimulationData] = useState<SimulationData | null>(null);
   // const [inputParams, setInputParams] = useState<SimulationParams>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [graphData, setGraphData] = useState<ChartDataPoint[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const timelineRef = useRef<gsap.core.Timeline | null>(null);
   const circleRef = useRef<SVGCircleElement>(null);
@@ -47,14 +44,8 @@ const slug = (await params).slug as string;
   };
 
   useEffect(() => {
-    if (simulationData && shouldDisplayChart(slug)) {
-      setGraphData(formatDataForChart(simulationData, slug));
-    }
-  }, [simulationData, slug]);
-
-  useEffect(() => {
     if (simulationData?.resultados?.estados_simulacion && simulationData.resultados.estados_simulacion.length > 0) {
-      const estados = simulationData.resultados.estados_simulacion;
+      const estados = simulationData.resultados.estados_simulacion as Record<string, number>[];
       console.log("Estados de simulación recibidos:", estados);
 
       if (!circleRef.current || !timeTextRef.current) return;
@@ -63,7 +54,7 @@ const slug = (await params).slug as string;
       let minX = Infinity, maxX = -Infinity;
       let minY = Infinity, maxY = -Infinity;
 
-      estados.forEach(estado => {
+      estados.forEach((estado) => {
         switch (slug) {
           case 'mru':
           case 'mruv':
@@ -156,18 +147,15 @@ const slug = (await params).slug as string;
       gsap.set(circleRef.current, { attr: { cx: initialCx, cy: initialCy } });
       timeTextRef.current.textContent = `Tiempo: ${initialEstado.tiempo?.toFixed(2) || '0.00'} s`;
 
-      // Create a GSAP timeline
       timelineRef.current = gsap.timeline({
         paused: true,
         onUpdate: () => {
           const currentTime = timelineRef.current?.time() || 0;
-          // Find the closest state based on time
-          let currentEstado = estados[0];
-           let index = 0; // Initialize index outside the loop
+          let currentEstado: Record<string, number> = estados[0] || {};
            for (let i = 0; i < estados.length; i++) {
-             if (estados[i].tiempo <= currentTime) {
-               currentEstado = estados[i];
-               index = i; // Update index
+             const estadoActual = estados[i];
+             if (estadoActual.tiempo <= currentTime) {
+               currentEstado = estadoActual;
              } else {
                break;
              }
@@ -295,11 +283,8 @@ const slug = (await params).slug as string;
     };
   }, [simulationData, slug]);
 
-const chartData = simulationData ? formatDataForChart(simulationData, slug) : [];
-
   const handleInputChange = (name: string, value: string) => {
     setInputParams(prev => {
-      const paramDef = expectedParams.find(p => p.name === name);
       const parsedValue = value === '' ? undefined : parseFloat(value);
       return {
         ...prev,
@@ -316,7 +301,7 @@ const chartData = simulationData ? formatDataForChart(simulationData, slug) : []
     // Filtrar parámetros vacíos o indefinidos antes de enviar
     const paramsToSend: SimulationParams = {};
     for (const key in inputParams) {
-      if (inputParams[key] !== '' && inputParams[key] !== undefined) {
+      if (inputParams[key] !== undefined && !Number.isNaN(inputParams[key])) {
         paramsToSend[key] = inputParams[key];
       }
     }
@@ -340,9 +325,9 @@ const chartData = simulationData ? formatDataForChart(simulationData, slug) : []
       const data = await response.json();
       console.log("Datos recibidos del backend:", data); // Añadir este console.log
       setSimulationData(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || 'Ocurrió un error al procesar la simulación.');
+      setError((err as Error).message || 'Ocurrió un error al procesar la simulación.');
     } finally {
       setIsLoading(false);
     }
@@ -352,7 +337,7 @@ const chartData = simulationData ? formatDataForChart(simulationData, slug) : []
   const [inputParams, setInputParams] = useState<SimulationParams>(() => {
     const initialParams: SimulationParams = {};
     expectedParams.forEach(param => {
-      if ('defaultValue' in param && param.defaultValue !== undefined) {
+      if (param.defaultValue !== undefined) {
         initialParams[param.name] = param.defaultValue;
       }
     });
